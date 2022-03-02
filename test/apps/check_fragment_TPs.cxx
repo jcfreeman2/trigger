@@ -8,7 +8,7 @@
 #include "CLI/CLI.hpp"
 
 #include "detdataformats/trigger/TriggerPrimitive.hpp"
-#include "hdf5libs/DAQDecoder.hpp"
+#include "hdf5libs/HDF5RawDataFile.hpp"
 
 #include <daqdataformats/Fragment.hpp>
 #include <daqdataformats/FragmentHeader.hpp>
@@ -40,28 +40,21 @@ main(int argc, char** argv)
   // Map from trigger number to struct of header/fragments
   std::map<int, MyTriggerRecord> trigger_records;
 
-  std::regex header_regex("^//TriggerRecord([0-9]+)/TriggerRecordHeader$", std::regex::extended);
-  std::regex trigger_fragment_regex("^//TriggerRecord([0-9]+)/Trigger/Region[0-9]+/Element[0-9]+$",
-                                    std::regex::extended);
 
-  unsigned int num_events;
-  dunedaq::hdf5libs::DAQDecoder decoder(filename, num_events);
+  dunedaq::hdf5libs::HDF5RawDataFile raw_data_file(filename);
 
   // Populate the map with the TRHs and DS fragments
-  auto datasets = decoder.get_datasets();
-  for (auto const& dataset : datasets) {
-    // std::cout << dataset << std::endl;
-    std::smatch m;
-    if (std::regex_match(dataset, m, header_regex)) {
-      int trigger_number = std::atoi(m[1].str().c_str());
-      trigger_records[trigger_number].header = decoder.get_trh_ptr(dataset);
-      // std::cout << "Header match: " << dataset << " m[1] = " <<  << std::endl;
-    }
-    if (std::regex_match(dataset, m, trigger_fragment_regex)) {
-      int trigger_number = std::atoi(m[1].str().c_str());
-      trigger_records[trigger_number].fragments.push_back(decoder.get_frag_ptr(dataset));
-      // std::cout << "Trigger fragment match: " << dataset << std::endl;
-    }
+  unsigned int num_events = 0;
+  auto trigger_numbers = raw_data_file.get_all_trigger_record_numbers();
+  for (auto const& trigger_number : trigger_numbers) {
+    trigger_records[trigger_number].header = raw_data_file.get_trh_ptr(trigger_number);
+    num_events++;
+  }
+
+  auto fragment_paths = raw_data_file.get_all_fragment_dataset_paths();
+  for (auto const& fragment_path : fragment_paths){
+    auto trigger_number = raw_data_file.get_frag_ptr(fragment_path)->get_trigger_number();
+    trigger_records[trigger_number].fragments.push_back(raw_data_file.get_frag_ptr(fragment_path));
   }
 
   int n_failures = 0;
