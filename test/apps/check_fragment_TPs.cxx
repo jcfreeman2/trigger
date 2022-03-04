@@ -8,7 +8,7 @@
 #include "CLI/CLI.hpp"
 
 #include "detdataformats/trigger/TriggerPrimitive.hpp"
-#include "hdf5libs/DAQDecoder.hpp"
+#include "hdf5libs/HDF5RawDataFile.hpp"
 
 #include <daqdataformats/Fragment.hpp>
 #include <daqdataformats/FragmentHeader.hpp>
@@ -44,26 +44,27 @@ main(int argc, char** argv)
   std::regex trigger_fragment_regex("^//TriggerRecord([0-9]+)/Trigger/Region[0-9]+/Element[0-9]+$",
                                     std::regex::extended);
 
-  unsigned int num_events;
-  dunedaq::hdf5libs::DAQDecoder decoder(filename, num_events);
+  dunedaq::hdf5libs::HDF5RawDataFile decoder(filename);
 
+  auto trigger_record_numbers = decoder.get_all_trigger_record_numbers();
+  
   // Populate the map with the TRHs and DS fragments
-  auto datasets = decoder.get_datasets();
-  for (auto const& dataset : datasets) {
-    // std::cout << dataset << std::endl;
-    std::smatch m;
-    if (std::regex_match(dataset, m, header_regex)) {
-      int trigger_number = std::atoi(m[1].str().c_str());
-      trigger_records[trigger_number].header = decoder.get_trh_ptr(dataset);
-      // std::cout << "Header match: " << dataset << " m[1] = " <<  << std::endl;
-    }
-    if (std::regex_match(dataset, m, trigger_fragment_regex)) {
-      int trigger_number = std::atoi(m[1].str().c_str());
-      trigger_records[trigger_number].fragments.push_back(decoder.get_frag_ptr(dataset));
-      // std::cout << "Trigger fragment match: " << dataset << std::endl;
-    }
-  }
+  for (auto trigger_number : trigger_record_numbers){
 
+    trigger_records[trigger_number].header = decoder.get_trh_ptr(trigger_number);
+
+    for(size_t ic=0; ic < trigger_records[trigger_number].header->get_num_requested_components(); ++ic){
+
+      auto const& comp_geoid = trigger_records[trigger_number].header->at(ic).component;
+
+      if(comp_geoid.system_type != dunedaq::daqdataformats::GeoID::SystemType::kDataSelection)
+	continue;
+
+      trigger_records[trigger_number].fragments.push_back(decoder.get_frag_ptr(trigger_number,comp_geoid));
+    }
+
+  }
+  
   int n_failures = 0;
 
   using dunedaq::detdataformats::trigger::TriggerPrimitive;
@@ -106,7 +107,7 @@ main(int argc, char** argv)
     }
   }
   if (n_failures > 0) {
-    std::cout << "Found " << n_failures << " TPs outside window in " << num_events << " trigger records" << std::endl;
+    std::cout << "Found " << n_failures << " TPs outside window in " << trigger_record_numbers.size() << " trigger records" << std::endl;
   } else {
     std::cout << "Test passed" << std::endl;
   }
