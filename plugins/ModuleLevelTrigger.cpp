@@ -148,9 +148,17 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
   decision.trigger_number = m_last_trigger_number + 1;
   decision.run_number = m_run_number;
   decision.trigger_timestamp = tc.time_candidate;
-  // TODO: work out what to set this to
-  decision.trigger_type = 1; // m_trigger_type;
   decision.readout_type = dfmessages::ReadoutType::kLocalized;
+
+  // TODO: work out what to set this to
+  decision.trigger_type = (tc.type == triggeralgs::TriggerCandidate::Type::kTiming) ? tc.detid : 1; // m_trigger_type;
+  std::cout << std::endl;
+  std::cout << "!!!!! TESTING MLT !!!!!" << std::endl;
+  std::cout << "candidate detid: " << tc.detid << std::endl;
+  std::cout << "type: " << (int)tc.type << std::endl;
+  std::cout << "trigger type: " << decision.trigger_type << std::endl;
+  std::cout << std::endl << std::endl;
+
 
   for (auto link : m_links) {
     dfmessages::ComponentRequest request;

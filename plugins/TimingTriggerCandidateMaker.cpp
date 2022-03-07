@@ -43,11 +43,17 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
   }
   candidate.time_candidate = data.timestamp;
   // throw away bits 31-16 of header, that's OK for now
-  candidate.detid = { static_cast<triggeralgs::detid_t>(data.header) }; // NOLINT(build/unsigned)
+  candidate.detid = { static_cast<triggeralgs::detid_t>(data.signal_map) }; // NOLINT(build/unsigned)
   candidate.type = triggeralgs::TriggerCandidate::Type::kTiming;
 
   candidate.algorithm = triggeralgs::TriggerCandidate::Algorithm::kHSIEventToTriggerCandidate;
   candidate.inputs = {};
+
+  std::cout << std::endl;
+  std::cout << "!!! TESTING !!!" << std::endl;
+  std::cout << "header: " << data.header << std::endl;
+  std::cout << "signal: " << data.signal_map << std::endl;
+  std::cout << std::endl << std::endl;
 
   return candidate;
 }
