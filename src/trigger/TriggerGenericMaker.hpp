@@ -129,7 +129,7 @@ private:
   {
     m_received_count = 0;
     m_sent_count = 0;
-    m_thread.start_working_thread();
+    m_thread.start_working_thread("activitymaker");
   }
 
   void do_stop(const nlohmann::json& /*obj*/) { m_thread.stop_working_thread(); }
