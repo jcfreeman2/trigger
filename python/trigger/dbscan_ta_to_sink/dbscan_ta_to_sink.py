@@ -49,6 +49,7 @@ def generate(
         SLOWDOWN_FACTOR: float,
         NUMBER_OF_LOOPS: int,
         ACTIVITY_CONFIG: dict = dict(min_pts=3),
+        DO_TASET_CHECKS: bool = True
 ):
     # Derived parameters
     CLOCK_FREQUENCY_HZ = 50_000_000 / SLOWDOWN_FACTOR
@@ -118,7 +119,8 @@ def generate(
     modules.append(DAQModule(name = "ta_sink",
                              plugin = "TASetSink",
                              connections = {},
-                             conf = tasetsink.Conf(output_filename=OUTPUT_FILE)))
+                             conf = tasetsink.Conf(output_filename=OUTPUT_FILE,
+                                                   do_checks = DO_TASET_CHECKS)))
 
     mgraph = ModuleGraph(modules)
     return App(modulegraph = mgraph, host="localhost", name="TASinkApp")

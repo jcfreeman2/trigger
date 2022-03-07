@@ -52,7 +52,12 @@ void
 TASetSink::do_conf(const nlohmann::json& obj)
 {
   m_conf=obj;
-  m_outfile.open(m_conf.output_filename);
+  if (m_conf.output_filename != "") {
+    m_outfile.open(m_conf.output_filename);
+  }
+  else {
+    TLOG() << "Output filename is null, so not opening an output file";
+  }
 }
 
 
@@ -85,37 +90,44 @@ TASetSink::do_work()
       }
     }
 
-    for(auto const& ta : taset.objects) {
-      m_outfile << ta.time_start << "\t" << ta.time_end << "\t" << ta.channel_start  << "\t" << ta.channel_end  << "\t" << ta.adc_integral << std::endl;
-      for (auto const& tp : ta.inputs) {
-          m_outfile << "\t" <<  tp.time_start << "\t" <<  tp.time_over_threshold << "\t" <<  tp.time_peak << "\t" <<  tp.channel << "\t" <<  tp.adc_integral << "\t"
-                    << tp.adc_peak << "\t" <<  tp.detid << "\t" <<  tp.type << "\t" <<  std::endl;
+    if (m_outfile.is_open()) {
+      for (auto const& ta : taset.objects) {
+        m_outfile << ta.time_start << "\t" << ta.time_end << "\t" << ta.channel_start << "\t" << ta.channel_end << "\t"
+                  << ta.adc_integral << std::endl;
+        for (auto const& tp : ta.inputs) {
+          m_outfile << "\t" << tp.time_start << "\t" << tp.time_over_threshold << "\t" << tp.time_peak << "\t"
+                    << tp.channel << "\t" << tp.adc_integral << "\t" << tp.adc_peak << "\t" << tp.detid << "\t"
+                    << tp.type << "\t" << std::endl;
+        }
+        m_outfile << std::endl;
       }
-      m_outfile << std::endl;
-    }
-    
-    // Do some checks on the received TASet
-    if (last_seqno != 0 && taset.seqno != last_seqno + 1) {
-      TLOG() << "Missed TASets: last_seqno=" << last_seqno << ", current seqno=" << taset.seqno;
-    }
+    } // end if(m_outfile.is_open())
+
+    if (m_conf.do_checks) {
+      // Do some checks on the received TASet
+      if (last_seqno != 0 && taset.seqno != last_seqno + 1) {
+        TLOG() << "Missed TASets: last_seqno=" << last_seqno << ", current seqno=" << taset.seqno;
+      }
+
+      if (taset.start_time < last_timestamp) {
+        TLOG_DEBUG(1) << "TASets out of order: last start time " << last_timestamp << ", current start time "
+                      << taset.start_time;
+      }
+      if (taset.type == TASet::Type::kHeartbeat) {
+        TLOG_DEBUG(1) << "Heartbeat TASet with start time " << taset.start_time;
+      } else if (taset.objects.empty()) {
+        TLOG_DEBUG(1) << "Empty TASet with start time " << taset.start_time;
+      }
+      for (auto const& tp : taset.objects) {
+        if (tp.time_start < taset.start_time || tp.time_start > taset.end_time) {
+          TLOG() << "TASet with start time " << taset.start_time << ", end time " << taset.end_time
+                 << " contains out-of-bounds TP with start time " << tp.time_start;
+        }
+      }
+    } // end if(m_conf.do_checks)
+
     last_seqno = taset.seqno;
-
-    if (taset.start_time < last_timestamp) {
-      TLOG() << "TASets out of order: last start time " << last_timestamp << ", current start time "
-             << taset.start_time;
-    }
-    if (taset.type == TASet::Type::kHeartbeat) {
-      TLOG() << "Heartbeat TASet with start time " << taset.start_time;
-    } else if (taset.objects.empty()) {
-      TLOG() << "Empty TASet with start time " << taset.start_time;
-    }
-    for (auto const& tp : taset.objects) {
-      if (tp.time_start < taset.start_time || tp.time_start > taset.end_time) {
-        TLOG() << "TASet with start time " << taset.start_time << ", end time " << taset.end_time
-               << " contains out-of-bounds TP with start time " << tp.time_start;
-      }
-    }
-
+    
     if (first_timestamp == 0) {
       first_timestamp = taset.start_time;
     }
