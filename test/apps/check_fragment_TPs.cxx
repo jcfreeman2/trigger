@@ -52,7 +52,8 @@ main(int argc, char** argv)
   for (auto trigger_number : trigger_record_numbers){
 
     trigger_records[trigger_number].header = decoder.get_trh_ptr(trigger_number);
-
+    auto seq_number = trigger_records[trigger_number].header->get_sequence_number();
+    
     for(size_t ic=0; ic < trigger_records[trigger_number].header->get_num_requested_components(); ++ic){
 
       auto const& comp_geoid = trigger_records[trigger_number].header->at(ic).component;
@@ -60,7 +61,7 @@ main(int argc, char** argv)
       if(comp_geoid.system_type != dunedaq::daqdataformats::GeoID::SystemType::kDataSelection)
 	continue;
 
-      trigger_records[trigger_number].fragments.push_back(decoder.get_frag_ptr(trigger_number,comp_geoid));
+      trigger_records[trigger_number].fragments.push_back(decoder.get_frag_ptr(trigger_number,seq_number,comp_geoid));
     }
 
   }
