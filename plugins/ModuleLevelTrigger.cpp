@@ -85,6 +85,9 @@ ModuleLevelTrigger::do_configure(const nlohmann::json& confobj)
   }
   m_trigger_decision_connection = params.dfo_connection;
   m_inhibit_connection = params.dfo_busy_connection;
+  m_hsi_passthrough = params.hsi_trigger_type_passthrough;
+
+  TLOG_DEBUG(3) << "HSI passthrough: " << m_hsi_passthrough; 
 
   networkmanager::NetworkManager::get().start_listening(m_inhibit_connection);
   m_configured_flag.store(true);
@@ -151,14 +154,17 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
   decision.readout_type = dfmessages::ReadoutType::kLocalized;
 
   // TODO: work out what to set this to
-  decision.trigger_type = (tc.type == triggeralgs::TriggerCandidate::Type::kTiming) ? tc.detid : 1; // m_trigger_type;
-  std::cout << std::endl;
-  std::cout << "!!!!! TESTING MLT !!!!!" << std::endl;
-  std::cout << "candidate detid: " << tc.detid << std::endl;
-  std::cout << "type: " << (int)tc.type << std::endl;
-  std::cout << "trigger type: " << decision.trigger_type << std::endl;
-  std::cout << std::endl << std::endl;
+  if (m_hsi_passthrough == true){
+  	TLOG_DEBUG(3) << "HSI PT IS TRUE!";
+  	decision.trigger_type = (tc.type == triggeralgs::TriggerCandidate::Type::kTiming) ? tc.detid : 1;
+  } else {
+	decision.trigger_type = 1; // m_trigger_type;
+  }
 
+  TLOG_DEBUG(3) << "!!!!! TESTING MLT !!!!!";
+  TLOG_DEBUG(3) << "candidate detid: " << tc.detid;
+  TLOG_DEBUG(3) << "type: " << (int)tc.type;
+  TLOG_DEBUG(3) << "trigger type: " << decision.trigger_type;
 
   for (auto link : m_links) {
     dfmessages::ComponentRequest request;

@@ -92,6 +92,7 @@ private:
   std::atomic<bool> m_dfo_is_busy;
   std::string m_trigger_decision_connection;
   std::string m_inhibit_connection;
+  std::atomic<bool> m_hsi_passthrough;
 
   dfmessages::trigger_number_t m_last_trigger_number;
 

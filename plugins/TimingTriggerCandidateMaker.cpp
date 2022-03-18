@@ -49,11 +49,9 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
   candidate.algorithm = triggeralgs::TriggerCandidate::Algorithm::kHSIEventToTriggerCandidate;
   candidate.inputs = {};
 
-  std::cout << std::endl;
-  std::cout << "!!! TESTING !!!" << std::endl;
-  std::cout << "header: " << data.header << std::endl;
-  std::cout << "signal: " << data.signal_map << std::endl;
-  std::cout << std::endl << std::endl;
+  TLOG_DEBUG(3) << "!!! TESTING !!!";
+  TLOG_DEBUG(3) << "header: " << data.header;
+  TLOG_DEBUG(3) << "signal: " << data.signal_map;
 
   return candidate;
 }
