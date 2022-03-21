@@ -108,6 +108,9 @@ void
 TriggerPrimitiveMaker::do_start(const nlohmann::json& /*args*/)
 {
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Entering do_start() method";
+  rcif::cmd::StartParams start_params = args.get<rcif::cmd::StartParams>();
+  m_run_number = start_params.run;
+
   m_thread.start_working_thread("tpmaker");
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Exiting do_start() method";
 }
@@ -195,6 +198,7 @@ TriggerPrimitiveMaker::do_work(std::atomic<bool>& running_flag)
         ++push_failed_count;
       }
 
+      tpset.run_number = m_run_number;
       // Increase seqno and the timestamps in the TPSet and TPs so they don't
       // repeat when we do multiple loops over the file
       tpset.start_time += input_file_duration;

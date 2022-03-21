@@ -57,7 +57,8 @@ private:
   triggerprimitivemaker::ConfParams m_conf;
   std::unique_ptr<appfwk::DAQSink<TPSet>> m_tpset_sink;
   std::vector<TPSet> m_tpsets;
-
+  daqdataformats::run_number_t m_run_number{ daqdataformats::TypeDefaults::s_invalid_run_number };
+  
   std::chrono::milliseconds m_queue_timeout;
 };
 } // namespace trigger
