@@ -33,13 +33,19 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
 {
   triggeralgs::TriggerCandidate candidate;
   // TODO Trigger Team <dune-daq@github.com> Nov-18-2021: the signal field ia now a signal bit map, rather than unique value -> change logic of below?
-  if (m_detid_offsets_map.count(data.signal_map)) {
-    // clang-format off
-    candidate.time_start = data.timestamp - m_detid_offsets_map[data.signal_map].first;  // time_start
-    candidate.time_end   = data.timestamp + m_detid_offsets_map[data.signal_map].second; // time_end,
-    // clang-format on
+  if (m_hsi_passthrough == true){
+    TLOG_DEBUG(3) << "changing the readout window due to PT condition";
+    candidate.time_start = data.timestamp - hsi_pt_before;
+    candidate.time_end   = data.timestamp + hsi_pt_after;
   } else {
-    throw dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map);
+    if (m_detid_offsets_map.count(data.signal_map)) {
+      // clang-format off
+      candidate.time_start = data.timestamp - m_detid_offsets_map[data.signal_map].first;  // time_start
+      candidate.time_end   = data.timestamp + m_detid_offsets_map[data.signal_map].second; // time_end,
+      // clang-format on    
+    } else {
+      throw dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map);
+    }
   }
   candidate.time_candidate = data.timestamp;
   // throw away bits 31-16 of header, that's OK for now
@@ -50,10 +56,48 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
   candidate.inputs = {};
 
   TLOG_DEBUG(3) << "!!! TESTING !!!";
+  TLOG_DEBUG(3) << "HSI PT: " << m_hsi_passthrough;  
   TLOG_DEBUG(3) << "header: " << data.header;
   TLOG_DEBUG(3) << "signal: " << data.signal_map;
 
   return candidate;
+}
+
+std::bitset<16>
+TimingTriggerCandidateMaker::MakeBitmask16(uint16_t signal_map)
+{
+  std::bitset<16> bitmask = std::bitset<16>(signal_map);
+  return bitmask;
+}
+
+std::bitset<8>
+TimingTriggerCandidateMaker::MakeBitmask8(unsigned short signal_map)
+{
+  std::bitset<8> bitmask = std::bitset<8>(signal_map);
+  return bitmask;
+}
+
+std::vector< std::bitset<8> >
+TimingTriggerCandidateMaker::SplitBits(uint16_t signal_map)
+{
+  unsigned short low = signal_map & 0xff;
+  unsigned short high = (signal_map >> 8) & 0xff;
+  std::bitset<8> low_mask = MakeBitmask8(low);
+  std::bitset<8> high_mask = MakeBitmask8(high); 
+  std::vector< std::bitset<8> > LowHighBits;
+  LowHighBits.push_back( low_mask );
+  LowHighBits.push_back( high_mask );  
+  return LowHighBits; 
+}
+
+void
+TimingTriggerCandidateMaker::AnyBitSet(std::bitset<8> bitmap)
+{
+  bool BitsSet = bitmap.any();
+  if (BitsSet == true){
+    throw dunedaq::trigger::BadTriggerBitmask(ERS_HERE, get_name(), bitmap);
+  }
+  return;
 }
 
 void
@@ -64,6 +108,9 @@ TimingTriggerCandidateMaker::do_conf(const nlohmann::json& config)
   m_detid_offsets_map[params.s1.signal_type] = { params.s1.time_before, params.s1.time_after };
   m_detid_offsets_map[params.s2.signal_type] = { params.s2.time_before, params.s2.time_after };
   m_hsievent_receive_connection = params.hsievent_connection_name;
+  m_hsi_passthrough = params.hsi_trigger_type_passthrough;
+  hsi_pt_before = params.s0.time_before;
+  hsi_pt_after = params.s0.time_after;
   TLOG_DEBUG(2) << get_name() + " configured.";
 }
 
@@ -112,6 +159,21 @@ TimingTriggerCandidateMaker::receive_hsievent(ipm::Receiver::Response message)
   auto data = serialization::deserialize<dfmessages::HSIEvent>(message.data);
   ++m_tsd_received_count;
   
+  if (m_hsi_passthrough == true){
+    TLOG_DEBUG(3) << data.signal_map;
+    trigger_bitmask = MakeBitmask16(data.signal_map);
+    LowHighBits = SplitBits(data.signal_map);   
+    TLOG_DEBUG(3) << trigger_bitmask;
+    TLOG_DEBUG(3) << LowHighBits[0];
+    TLOG_DEBUG(3) << LowHighBits[1];
+    try {
+      AnyBitSet(LowHighBits[1]);
+    } catch (BadTriggerBitmask& e) {
+      ers::error(e);
+      return;
+    }
+  }
+
   triggeralgs::TriggerCandidate candidate;
   try {
     candidate = HSIEventToTriggerCandidate(data);

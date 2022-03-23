@@ -155,10 +155,17 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
 
   // TODO: work out what to set this to
   if (m_hsi_passthrough == true){
-  	TLOG_DEBUG(3) << "HSI PT IS TRUE!";
-  	decision.trigger_type = (tc.type == triggeralgs::TriggerCandidate::Type::kTiming) ? tc.detid : 1;
+    TLOG_DEBUG(3) << "HSI PT IS TRUE!";
+    TLOG_DEBUG(3) << "TCTYPE: " << (int)tc.type;
+    if (tc.type != triggeralgs::TriggerCandidate::Type::kTiming){
+      decision.trigger_type = tc.detid;
+    } else {
+      dfmessages::trigger_type_t trigger_type_shifted = ((int)tc.type << 8);
+      decision.trigger_type = trigger_type_shifted;
+    }
+  TLOG_DEBUG(3) << "DEC TYPE: " << decision.trigger_type;
   } else {
-	decision.trigger_type = 1; // m_trigger_type;
+    decision.trigger_type = 1; // m_trigger_type;
   }
 
   TLOG_DEBUG(3) << "!!!!! TESTING MLT !!!!!";

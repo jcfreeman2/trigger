@@ -55,6 +55,17 @@ private:
 
   std::string m_hsievent_receive_connection;
 
+  // HSI Passthrough changes
+  std::atomic<bool> m_hsi_passthrough;
+  int hsi_pt_before;
+  int hsi_pt_after;
+  std::bitset<16> trigger_bitmask;
+  std::vector< std::bitset<8> > LowHighBits;
+  std::bitset<16> MakeBitmask16(uint16_t signal_map);
+  std::bitset<8> MakeBitmask8(unsigned short signal_map);
+  std::vector< std::bitset<8> > SplitBits(uint16_t signal_map);
+  void AnyBitSet(std::bitset<8> bitmap);
+
   triggeralgs::TriggerCandidate HSIEventToTriggerCandidate(const dfmessages::HSIEvent& data);
   void receive_hsievent(ipm::Receiver::Response message);
 
