@@ -157,7 +157,7 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
   if (m_hsi_passthrough == true){
     TLOG_DEBUG(3) << "HSI PT IS TRUE!";
     TLOG_DEBUG(3) << "TCTYPE: " << (int)tc.type;
-    if (tc.type != triggeralgs::TriggerCandidate::Type::kTiming){
+    if (tc.type == triggeralgs::TriggerCandidate::Type::kTiming){
       decision.trigger_type = tc.detid;
     } else {
       dfmessages::trigger_type_t trigger_type_shifted = ((int)tc.type << 8);
