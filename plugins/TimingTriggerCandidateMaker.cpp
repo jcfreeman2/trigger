@@ -34,7 +34,7 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
   triggeralgs::TriggerCandidate candidate;
   // TODO Trigger Team <dune-daq@github.com> Nov-18-2021: the signal field ia now a signal bit map, rather than unique value -> change logic of below?
   if (m_hsi_passthrough == true){
-    TLOG_DEBUG(3) << "changing the readout window due to PT condition";
+    TLOG_DEBUG(3) << "HSI passthrough applied, modified readout window is set";
     candidate.time_start = data.timestamp - hsi_pt_before;
     candidate.time_end   = data.timestamp + hsi_pt_after;
   } else {
@@ -54,11 +54,6 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
 
   candidate.algorithm = triggeralgs::TriggerCandidate::Algorithm::kHSIEventToTriggerCandidate;
   candidate.inputs = {};
-
-  TLOG_DEBUG(3) << "!!! TESTING !!!";
-  TLOG_DEBUG(3) << "HSI PT: " << m_hsi_passthrough;  
-  TLOG_DEBUG(3) << "header: " << data.header;
-  TLOG_DEBUG(3) << "signal: " << data.signal_map;
 
   return candidate;
 }
@@ -160,12 +155,9 @@ TimingTriggerCandidateMaker::receive_hsievent(ipm::Receiver::Response message)
   ++m_tsd_received_count;
   
   if (m_hsi_passthrough == true){
-    TLOG_DEBUG(3) << data.signal_map;
     trigger_bitmask = MakeBitmask16(data.signal_map);
     LowHighBits = SplitBits(data.signal_map);   
-    TLOG_DEBUG(3) << trigger_bitmask;
-    TLOG_DEBUG(3) << LowHighBits[0];
-    TLOG_DEBUG(3) << LowHighBits[1];
+    TLOG_DEBUG(3) << "Signal_map: " << data.signal_map << ", trigger bits: " << LowHighBits[1] << " " << LowHighBits[0];
     try {
       AnyBitSet(LowHighBits[1]);
     } catch (BadTriggerBitmask& e) {
