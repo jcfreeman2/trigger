@@ -35,8 +35,8 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
   // TODO Trigger Team <dune-daq@github.com> Nov-18-2021: the signal field ia now a signal bit map, rather than unique value -> change logic of below?
   if (m_hsi_passthrough == true){
     TLOG_DEBUG(3) << "HSI passthrough applied, modified readout window is set";
-    candidate.time_start = data.timestamp - hsi_pt_before;
-    candidate.time_end   = data.timestamp + hsi_pt_after;
+    candidate.time_start = data.timestamp - m_hsi_pt_before;
+    candidate.time_end   = data.timestamp + m_hsi_pt_after;
   } else {
     if (m_detid_offsets_map.count(data.signal_map)) {
       // clang-format off
@@ -44,7 +44,7 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
       candidate.time_end   = data.timestamp + m_detid_offsets_map[data.signal_map].second; // time_end,
       // clang-format on    
     } else {
-      throw dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map);
+      ers::error(dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map));
     }
   }
   candidate.time_candidate = data.timestamp;
@@ -58,42 +58,6 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
   return candidate;
 }
 
-std::bitset<16>
-TimingTriggerCandidateMaker::MakeBitmask16(uint16_t signal_map)
-{
-  std::bitset<16> bitmask = std::bitset<16>(signal_map);
-  return bitmask;
-}
-
-std::bitset<8>
-TimingTriggerCandidateMaker::MakeBitmask8(unsigned short signal_map)
-{
-  std::bitset<8> bitmask = std::bitset<8>(signal_map);
-  return bitmask;
-}
-
-std::vector< std::bitset<8> >
-TimingTriggerCandidateMaker::SplitBits(uint16_t signal_map)
-{
-  unsigned short low = signal_map & 0xff;
-  unsigned short high = (signal_map >> 8) & 0xff;
-  std::bitset<8> low_mask = MakeBitmask8(low);
-  std::bitset<8> high_mask = MakeBitmask8(high); 
-  std::vector< std::bitset<8> > LowHighBits;
-  LowHighBits.push_back( low_mask );
-  LowHighBits.push_back( high_mask );  
-  return LowHighBits; 
-}
-
-void
-TimingTriggerCandidateMaker::AnyBitSet(std::bitset<8> bitmap)
-{
-  bool BitsSet = bitmap.any();
-  if (BitsSet == true){
-    throw dunedaq::trigger::BadTriggerBitmask(ERS_HERE, get_name(), bitmap);
-  }
-  return;
-}
 
 void
 TimingTriggerCandidateMaker::do_conf(const nlohmann::json& config)
@@ -104,8 +68,8 @@ TimingTriggerCandidateMaker::do_conf(const nlohmann::json& config)
   m_detid_offsets_map[params.s2.signal_type] = { params.s2.time_before, params.s2.time_after };
   m_hsievent_receive_connection = params.hsievent_connection_name;
   m_hsi_passthrough = params.hsi_trigger_type_passthrough;
-  hsi_pt_before = params.s0.time_before;
-  hsi_pt_after = params.s0.time_after;
+  m_hsi_pt_before = params.s0.time_before;
+  m_hsi_pt_after = params.s0.time_after;
   TLOG_DEBUG(2) << get_name() + " configured.";
 }
 
@@ -155,11 +119,11 @@ TimingTriggerCandidateMaker::receive_hsievent(ipm::Receiver::Response message)
   ++m_tsd_received_count;
   
   if (m_hsi_passthrough == true){
-    trigger_bitmask = MakeBitmask16(data.signal_map);
-    LowHighBits = SplitBits(data.signal_map);   
-    TLOG_DEBUG(3) << "Signal_map: " << data.signal_map << ", trigger bits: " << LowHighBits[1] << " " << LowHighBits[0];
+    TLOG_DEBUG(3) << "Signal_map: " << data.signal_map << ", trigger bits: " << (std::bitset<16>)data.signal_map;
     try {
-      AnyBitSet(LowHighBits[1]);
+      if ((data.signal_map & 0xffffff00) != 0){
+        throw dunedaq::trigger::BadTriggerBitmask(ERS_HERE, get_name(), (std::bitset<16>)data.signal_map);
+      }
     } catch (BadTriggerBitmask& e) {
       ers::error(e);
       return;

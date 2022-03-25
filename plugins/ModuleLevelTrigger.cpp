@@ -151,13 +151,12 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
   decision.trigger_timestamp = tc.time_candidate;
   decision.readout_type = dfmessages::ReadoutType::kLocalized;
 
-  // TODO: work out what to set this to
   if (m_hsi_passthrough == true){
     if (tc.type == triggeralgs::TriggerCandidate::Type::kTiming){
-      decision.trigger_type = tc.detid;
+      decision.trigger_type = tc.detid & 0xff;
     } else {
-      dfmessages::trigger_type_t trigger_type_shifted = ((int)tc.type << 8);
-      decision.trigger_type = trigger_type_shifted;
+      m_trigger_type_shifted = ((int)tc.type << 8);
+      decision.trigger_type = m_trigger_type_shifted;
     }
   } else {
     decision.trigger_type = 1; // m_trigger_type;

@@ -77,6 +77,7 @@ private:
 
   // Create the next trigger decision
   dfmessages::TriggerDecision create_decision(const triggeralgs::TriggerCandidate& tc);
+  dfmessages::trigger_type_t m_trigger_type_shifted;
 
   void dfo_busy_callback(ipm::Receiver::Response message);
 

@@ -145,7 +145,7 @@ ERS_DECLARE_ISSUE_BASE(trigger,
                        appfwk::GeneralDAQModuleIssue,
                        "The trigger type contains high bits: " << trigger_type,
                        ((std::string)name),
-                       ((std::bitset<8>)trigger_type))
+                       ((std::bitset<16>)trigger_type))
 
 } // namespace dunedaq
 

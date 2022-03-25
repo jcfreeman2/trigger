@@ -30,7 +30,6 @@ main(int argc, char** argv)
 
   auto trigger_record_numbers = decoder.get_all_trigger_record_numbers();
   
-  // Populate the map with the TRHs and DS fragments
   for (auto trigger_number : trigger_record_numbers){
 
     auto header = decoder.get_trh_ptr(trigger_number);
