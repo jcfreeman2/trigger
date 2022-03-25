@@ -44,7 +44,7 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
       candidate.time_end   = data.timestamp + m_detid_offsets_map[data.signal_map].second; // time_end,
       // clang-format on    
     } else {
-      ers::error(dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map));
+      throw dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map);
     }
   }
   candidate.time_candidate = data.timestamp;
