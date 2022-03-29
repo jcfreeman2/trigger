@@ -12,6 +12,7 @@
 
 #include "appfwk/DAQModuleHelper.hpp"
 #include "appfwk/cmd/Nljs.hpp"
+#include "rcif/cmd/Nljs.hpp"
 
 #include "logging/Logging.hpp"
 
@@ -105,7 +106,7 @@ TriggerPrimitiveMaker::do_configure(const nlohmann::json& obj)
 }
 
 void
-TriggerPrimitiveMaker::do_start(const nlohmann::json& /*args*/)
+TriggerPrimitiveMaker::do_start(const nlohmann::json& args)
 {
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Entering do_start() method";
   rcif::cmd::StartParams start_params = args.get<rcif::cmd::StartParams>();
