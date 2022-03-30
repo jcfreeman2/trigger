@@ -94,11 +94,15 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
     }
 
     // Actually do the removal for payload TPSets. Leave heartbeat TPSets unmolested
+    
     if (tpset.type == TPSet::kPayload) {
+      size_t n_before = tpset.objects.size();
       auto it = std::remove_if(tpset.objects.begin(), tpset.objects.end(), [this](triggeralgs::TriggerPrimitive p) {
         return channel_should_be_removed(p.channel);
       });
       tpset.objects.erase(it, tpset.objects.end());
+      size_t n_after = tpset.objects.size();
+      TLOG_DEBUG(2) << "Removed " << (n_before - n_after) << " TPs out of " << n_before;
     }
     
     try {
