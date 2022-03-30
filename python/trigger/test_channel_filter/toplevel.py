@@ -27,10 +27,10 @@ def cli(slowdown_factor, input_file, keep_collection, keep_induction, channel_ma
     the_system = System("test_channel_filter_partition")
     
     console.log("Loading faketp config generator")
-    from .test_channel_filter import TPChannelFilterApp
+    from .test_channel_filter import TestChannelFilterApp
     console.log(f"Generating configs")
 
-    the_system.apps["test_channel_filter"] = TPChannelFilterApp(
+    the_system.apps["test_channel_filter"] = TestChannelFilterApp(
         INPUT_FILES = input_file,
         SLOWDOWN_FACTOR = slowdown_factor,
         KEEP_COLLECTION = keep_collection,
