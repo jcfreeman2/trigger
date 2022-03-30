@@ -33,17 +33,23 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
 {
   triggeralgs::TriggerCandidate candidate;
   // TODO Trigger Team <dune-daq@github.com> Nov-18-2021: the signal field ia now a signal bit map, rather than unique value -> change logic of below?
-  if (m_detid_offsets_map.count(data.signal_map)) {
-    // clang-format off
-    candidate.time_start = data.timestamp - m_detid_offsets_map[data.signal_map].first;  // time_start
-    candidate.time_end   = data.timestamp + m_detid_offsets_map[data.signal_map].second; // time_end,
-    // clang-format on
+  if (m_hsi_passthrough == true){
+    TLOG_DEBUG(3) << "HSI passthrough applied, modified readout window is set";
+    candidate.time_start = data.timestamp - m_hsi_pt_before;
+    candidate.time_end   = data.timestamp + m_hsi_pt_after;
   } else {
-    throw dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map);
+    if (m_detid_offsets_map.count(data.signal_map)) {
+      // clang-format off
+      candidate.time_start = data.timestamp - m_detid_offsets_map[data.signal_map].first;  // time_start
+      candidate.time_end   = data.timestamp + m_detid_offsets_map[data.signal_map].second; // time_end,
+      // clang-format on    
+    } else {
+      throw dunedaq::trigger::SignalTypeError(ERS_HERE, get_name(), data.signal_map);
+    }
   }
   candidate.time_candidate = data.timestamp;
   // throw away bits 31-16 of header, that's OK for now
-  candidate.detid = { static_cast<triggeralgs::detid_t>(data.header) }; // NOLINT(build/unsigned)
+  candidate.detid = { static_cast<triggeralgs::detid_t>(data.signal_map) }; // NOLINT(build/unsigned)
   candidate.type = triggeralgs::TriggerCandidate::Type::kTiming;
 
   candidate.algorithm = triggeralgs::TriggerCandidate::Algorithm::kHSIEventToTriggerCandidate;
@@ -51,6 +57,7 @@ TimingTriggerCandidateMaker::HSIEventToTriggerCandidate(const dfmessages::HSIEve
 
   return candidate;
 }
+
 
 void
 TimingTriggerCandidateMaker::do_conf(const nlohmann::json& config)
@@ -60,6 +67,9 @@ TimingTriggerCandidateMaker::do_conf(const nlohmann::json& config)
   m_detid_offsets_map[params.s1.signal_type] = { params.s1.time_before, params.s1.time_after };
   m_detid_offsets_map[params.s2.signal_type] = { params.s2.time_before, params.s2.time_after };
   m_hsievent_receive_connection = params.hsievent_connection_name;
+  m_hsi_passthrough = params.hsi_trigger_type_passthrough;
+  m_hsi_pt_before = params.s0.time_before;
+  m_hsi_pt_after = params.s0.time_after;
   TLOG_DEBUG(2) << get_name() + " configured.";
 }
 
@@ -108,6 +118,18 @@ TimingTriggerCandidateMaker::receive_hsievent(ipm::Receiver::Response message)
   auto data = serialization::deserialize<dfmessages::HSIEvent>(message.data);
   ++m_tsd_received_count;
   
+  if (m_hsi_passthrough == true){
+    TLOG_DEBUG(3) << "Signal_map: " << data.signal_map << ", trigger bits: " << (std::bitset<16>)data.signal_map;
+    try {
+      if ((data.signal_map & 0xffffff00) != 0){
+        throw dunedaq::trigger::BadTriggerBitmask(ERS_HERE, get_name(), (std::bitset<16>)data.signal_map);
+      }
+    } catch (BadTriggerBitmask& e) {
+      ers::error(e);
+      return;
+    }
+  }
+
   triggeralgs::TriggerCandidate candidate;
   try {
     candidate = HSIEventToTriggerCandidate(data);

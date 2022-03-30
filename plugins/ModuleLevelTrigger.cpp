@@ -85,6 +85,7 @@ ModuleLevelTrigger::do_configure(const nlohmann::json& confobj)
   }
   m_trigger_decision_connection = params.dfo_connection;
   m_inhibit_connection = params.dfo_busy_connection;
+  m_hsi_passthrough = params.hsi_trigger_type_passthrough;
 
   networkmanager::NetworkManager::get().start_listening(m_inhibit_connection);
   m_configured_flag.store(true);
@@ -148,9 +149,20 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
   decision.trigger_number = m_last_trigger_number + 1;
   decision.run_number = m_run_number;
   decision.trigger_timestamp = tc.time_candidate;
-  // TODO: work out what to set this to
-  decision.trigger_type = 1; // m_trigger_type;
   decision.readout_type = dfmessages::ReadoutType::kLocalized;
+
+  if (m_hsi_passthrough == true){
+    if (tc.type == triggeralgs::TriggerCandidate::Type::kTiming){
+      decision.trigger_type = tc.detid & 0xff;
+    } else {
+      m_trigger_type_shifted = ((int)tc.type << 8);
+      decision.trigger_type = m_trigger_type_shifted;
+    }
+  } else {
+    decision.trigger_type = 1; // m_trigger_type;
+  }
+
+  TLOG_DEBUG(3) << "HSI passthrough: " << m_hsi_passthrough << ", TC detid: " << tc.detid << ", TC type: " << (int)tc.type << ", DECISION trigger type: " << decision.trigger_type;
 
   for (auto link : m_links) {
     dfmessages::ComponentRequest request;
