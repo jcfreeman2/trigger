@@ -28,7 +28,7 @@ class TestChannelFilterApp(App):
                  INPUT_FILES: [str],
                  SLOWDOWN_FACTOR: float,
                  CHANNEL_MAP_NAME: str,
-                 KEEP_COLLECTION: bool
+                 KEEP_COLLECTION: bool,
                  KEEP_INDUCTION: bool):
 
         clock_frequency_hz = 50_000_000 / SLOWDOWN_FACTOR
@@ -60,11 +60,11 @@ class TestChannelFilterApp(App):
                                      conf = chan_filter.Conf(channel_map_name=CHANNEL_MAP_NAME,
                                                              keep_collection=KEEP_COLLECTION,
                                                              keep_induction=KEEP_INDUCTION),
-                                     connections = {"tpset_sink" : Connection(f"ftpchm{istream}.input")}))
+                                     connections = {"tpset_sink" : Connection(f"ftpchm{istream}.tpset_source")}))
 
             modules.append(DAQModule(name = f"ftpchm{istream}",
                                      plugin = "FakeTPCreatorHeartbeatMaker",
-                                     conf = ftpchm.Conf(heartbeat_interval = 50000),
+                                     conf = ftpchm.Conf(heartbeat_interval = 500_000),
                                      connections = {"tpset_sink" : Connection("zip.input")}))
 
         modules.append(DAQModule(name = "zip",
