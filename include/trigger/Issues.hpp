@@ -16,6 +16,7 @@
 #include "triggeralgs/Types.hpp"
 
 #include <string>
+#include <bitset>
 
 // NOLINTNEXTLINE(build/define_used)
 #define TLVL_ENTER_EXIT_METHODS 10
@@ -138,6 +139,13 @@ ERS_DECLARE_ISSUE_BASE(trigger,
                                              << "is higher than time_start of last TP and will be ignored.",
                        ((std::string)name),
                        ((int64_t)time_start))
+
+ERS_DECLARE_ISSUE_BASE(trigger,
+                       BadTriggerBitmask,
+                       appfwk::GeneralDAQModuleIssue,
+                       "The trigger type contains high bits: " << trigger_type,
+                       ((std::string)name),
+                       ((std::bitset<16>)trigger_type))
 
 } // namespace dunedaq
 

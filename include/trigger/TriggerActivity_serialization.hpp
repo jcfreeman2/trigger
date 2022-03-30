@@ -17,6 +17,22 @@ MSGPACK_ADD_ENUM(triggeralgs::TriggerActivity::Type)
 
 MSGPACK_ADD_ENUM(triggeralgs::TriggerActivity::Algorithm)
 
+DUNE_DAQ_SERIALIZE_NON_INTRUSIVE(dunedaq::detdataformats::trigger,
+                                 TriggerActivityData,
+                                 time_start,
+                                 time_end,
+                                 time_peak,
+                                 time_activity,
+                                 channel_start,
+                                 channel_end,
+                                 channel_peak,
+                                 adc_integral,
+                                 adc_peak,
+                                 detid,
+                                 type,
+                                 algorithm,
+                                 version)
+
 DUNE_DAQ_SERIALIZE_NON_INTRUSIVE(triggeralgs,
                                  TriggerActivity,
                                  time_start,
@@ -32,6 +48,6 @@ DUNE_DAQ_SERIALIZE_NON_INTRUSIVE(triggeralgs,
                                  type,
                                  algorithm,
                                  version,
-                                 tp_list)
+                                 inputs)
 
 #endif // TRIGGER_INCLUDE_TRIGGER_TRIGGERACTIVITY_SERIALIZATION_HPP_
