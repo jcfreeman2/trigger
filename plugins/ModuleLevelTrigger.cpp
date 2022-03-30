@@ -24,6 +24,7 @@
 
 #include "appfwk/DAQModuleHelper.hpp"
 #include "appfwk/app/Nljs.hpp"
+#include "networkmanager/NetworkManager.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -38,7 +39,6 @@ namespace trigger {
 
 ModuleLevelTrigger::ModuleLevelTrigger(const std::string& name)
   : DAQModule(name)
-  , m_trigger_decision_sink(nullptr)
   , m_last_trigger_number(0)
   , m_run_number(0)
 {
@@ -55,8 +55,6 @@ ModuleLevelTrigger::ModuleLevelTrigger(const std::string& name)
 void
 ModuleLevelTrigger::init(const nlohmann::json& iniobj)
 {
-  m_trigger_decision_sink.reset(
-    new appfwk::DAQSink<dfmessages::TriggerDecision>(appfwk::queue_inst(iniobj, "trigger_decision_sink")));
   m_candidate_source.reset(
     new appfwk::DAQSource<triggeralgs::TriggerCandidate>(appfwk::queue_inst(iniobj, "trigger_candidate_source")));
 }
@@ -85,7 +83,11 @@ ModuleLevelTrigger::do_configure(const nlohmann::json& confobj)
     m_links.push_back(
       dfmessages::GeoID{ daqdataformats::GeoID::string_to_system_type(link.system), link.region, link.element });
   }
+  m_trigger_decision_connection = params.dfo_connection;
+  m_inhibit_connection = params.dfo_busy_connection;
+  m_hsi_passthrough = params.hsi_trigger_type_passthrough;
 
+  networkmanager::NetworkManager::get().start_listening(m_inhibit_connection);
   m_configured_flag.store(true);
 }
 
@@ -96,6 +98,10 @@ ModuleLevelTrigger::do_start(const nlohmann::json& startobj)
 
   m_paused.store(true);
   m_running_flag.store(true);
+  m_dfo_is_busy.store(false);
+
+  networkmanager::NetworkManager::get().register_callback(
+    m_inhibit_connection, std::bind(&ModuleLevelTrigger::dfo_busy_callback, this, std::placeholders::_1));
 
   m_send_trigger_decisions_thread = std::thread(&ModuleLevelTrigger::send_trigger_decisions, this);
   pthread_setname_np(m_send_trigger_decisions_thread.native_handle(), "mlt-trig-dec");
@@ -107,6 +113,8 @@ ModuleLevelTrigger::do_stop(const nlohmann::json& /*stopobj*/)
 {
   m_running_flag.store(false);
   m_send_trigger_decisions_thread.join();
+
+  networkmanager::NetworkManager::get().clear_callback(m_inhibit_connection);
   ers::info(TriggerEndOfRun(ERS_HERE, m_run_number));
 }
 
@@ -130,6 +138,7 @@ void
 ModuleLevelTrigger::do_scrap(const nlohmann::json& /*scrapobj*/)
 {
   m_links.clear();
+  networkmanager::NetworkManager::get().stop_listening(m_inhibit_connection);
   m_configured_flag.store(false);
 }
 
@@ -140,9 +149,20 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
   decision.trigger_number = m_last_trigger_number + 1;
   decision.run_number = m_run_number;
   decision.trigger_timestamp = tc.time_candidate;
-  // TODO: work out what to set this to
-  decision.trigger_type = 1; // m_trigger_type;
   decision.readout_type = dfmessages::ReadoutType::kLocalized;
+
+  if (m_hsi_passthrough == true){
+    if (tc.type == triggeralgs::TriggerCandidate::Type::kTiming){
+      decision.trigger_type = tc.detid & 0xff;
+    } else {
+      m_trigger_type_shifted = ((int)tc.type << 8);
+      decision.trigger_type = m_trigger_type_shifted;
+    }
+  } else {
+    decision.trigger_type = 1; // m_trigger_type;
+  }
+
+  TLOG_DEBUG(3) << "HSI passthrough: " << m_hsi_passthrough << ", TC detid: " << tc.detid << ", TC type: " << (int)tc.type << ", DECISION trigger type: " << decision.trigger_type;
 
   for (auto link : m_links) {
     dfmessages::ComponentRequest request;
@@ -185,35 +205,37 @@ ModuleLevelTrigger::send_trigger_decisions()
       }
     }
 
-    bool tokens_allow_triggers = m_trigger_decision_sink->can_push();
-
-    if (!m_paused.load() && tokens_allow_triggers ) {
+    if (!m_paused.load() && !m_dfo_is_busy.load() ) {
 
       dfmessages::TriggerDecision decision = create_decision(tc);
 
-      TLOG_DEBUG(1) << "Pushing a decision with triggernumber " << decision.trigger_number << " timestamp "
+      TLOG_DEBUG(1) << "Sending a decision with triggernumber " << decision.trigger_number << " timestamp "
                     << decision.trigger_timestamp << " number of links " << decision.components.size()
                     << " based on TC of type " << static_cast<std::underlying_type_t<decltype(tc.type)>>(tc.type);
 
       try {
-        m_trigger_decision_sink->push(decision, std::chrono::milliseconds(1));
+        auto serialised_decision = serialization::serialize(decision, serialization::kMsgPack);
+        networkmanager::NetworkManager::get().send_to(m_trigger_decision_connection,
+                                                      static_cast<const void*>(serialised_decision.data()),
+                                                      serialised_decision.size(),
+                                                      std::chrono::milliseconds(1));
         m_td_sent_count++;
         m_last_trigger_number++;
-      } catch (appfwk::QueueTimeoutExpired& e) {
+      } catch (const ers::Issue& e) {
 	ers::error(e);
-        TLOG_DEBUG(1) << "The queue is misbehaving: it accepted TD but the push failed for "
+        TLOG_DEBUG(1) << "The network is misbehaving: it accepted TD but the send failed for "
                       << tc.time_candidate;
         m_td_queue_timeout_expired_err_count++;
       }
 
-    } else if (!tokens_allow_triggers) {
-      ers::warning(TriggerInhibited(ERS_HERE, m_run_number));
-      TLOG_DEBUG(1) << "There are no Tokens available. Not sending a TriggerDecision for candidate timestamp "
-                    << tc.time_candidate;
-      m_td_inhibited_count++;
-    }else {
+    } else if (m_paused.load()) {
       ++m_td_paused_count;
       TLOG_DEBUG(1) << "Triggers are paused. Not sending a TriggerDecision ";
+    } else {
+      ers::warning(TriggerInhibited(ERS_HERE, m_run_number));
+      TLOG_DEBUG(1) << "The DFO is busy. Not sending a TriggerDecision for candidate timestamp "
+                    << tc.time_candidate;
+      m_td_inhibited_count++;
     }
     m_td_total_count++;
   }
@@ -222,6 +244,17 @@ ModuleLevelTrigger::send_trigger_decisions()
          << "Received " << m_tc_received_count << " TCs. Sent " << m_td_sent_count.load() << " TDs. "
          << m_td_paused_count << " TDs were created during pause, and " << m_td_inhibited_count.load()
          << " TDs were inhibited.";
+}
+
+void
+ModuleLevelTrigger::dfo_busy_callback(ipm::Receiver::Response message)
+{
+
+  auto inhibit = serialization::deserialize<dfmessages::TriggerInhibit>(message.data);
+
+  if (inhibit.run_number == m_run_number) {
+    m_dfo_is_busy = inhibit.busy;
+  }
 }
 
 } // namespace trigger

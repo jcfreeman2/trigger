@@ -18,12 +18,12 @@
 #include "appfwk/DAQModuleHelper.hpp"
 #include "appfwk/DAQSink.hpp"
 #include "appfwk/DAQSource.hpp"
-#include "appfwk/ThreadHelper.hpp"
+#include "utilities/WorkerThread.hpp"
 
 #include "daqdataformats/GeoID.hpp"
 
 #include "logging/Logging.hpp"
-#include "triggeralgs/Types.hpp"
+#include "detdataformats/trigger/Types.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -96,7 +96,7 @@ protected:
   }
 
 private:
-  dunedaq::appfwk::ThreadHelper m_thread;
+  dunedaq::utilities::WorkerThread m_thread;
 
   size_t m_received_count;
   size_t m_sent_count;
@@ -292,7 +292,22 @@ public: // NOLINT
         process_slice(time_slice, elems);
       } break;
       case Set<A>::Type::kHeartbeat: {
-        // forward the heartbeat
+        // PAR 2022-01-21 We've got a heartbeat for time T, so we know
+        // we won't receive any more inputs for times t < T. Therefore
+        // we can flush all items in the input buffer, which have
+        // times t < T, because the input is time-ordered. We also
+        // forward the heartbeat downstream
+
+        std::vector<A> time_slice;
+        daqdataformats::timestamp_t start_time, end_time;
+        if (m_in_buffer.flush(time_slice, start_time, end_time)) {
+          if (end_time > in.start_time) {
+            // This should never happen, but we check here so we at least get some output if it did
+            ers::fatal(OutOfOrderSets(ERS_HERE, m_parent.get_name(), end_time, in.start_time));
+          }
+          process_slice(time_slice, elems);
+        }
+        
         Set<B> heartbeat;
         heartbeat.seqno = m_parent.m_sent_count;
         heartbeat.type = Set<B>::Type::kHeartbeat;
@@ -428,9 +443,22 @@ public: // NOLINT
         process_slice(time_slice, out_vec);
       } break;
       case Set<A>::Type::kHeartbeat:
-        // TODO Benjamin Land <BenLand100@github.com> May-28-2021 should anything happen with the heartbeat when OUT is
-        // not a Set<T>?
+        // TODO BJL May-28-2021 should anything happen with the heartbeat when OUT is not a Set<T>?
+        //
+        // PAR 2022-01-21 We've got a heartbeat for time T, so we know
+        // we won't receive any more inputs for times t < T. Therefore
+        // we can flush all items in the input buffer, which have
+        // times t < T, because the input is time-ordered
         try {
+          std::vector<A> time_slice;
+          daqdataformats::timestamp_t start_time, end_time;
+          if (m_in_buffer.flush(time_slice, start_time, end_time)) {
+            if (end_time > in.start_time) {
+              // This should never happen, but we check here so we at least get some output if it did
+              ers::fatal(OutOfOrderSets(ERS_HERE, m_parent.get_name(), end_time, in.start_time));
+            }
+            process_slice(time_slice, out_vec);
+          }
           m_parent.m_maker->flush(in.end_time, out_vec);
         } catch (...) { // NOLINT TODO Benjamin Land <BenLand100@github.com> May 28-2021 can we restrict the possible
                         // exceptions triggeralgs might raise?

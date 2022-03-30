@@ -13,7 +13,7 @@
 #include "appfwk/DAQModuleHelper.hpp"
 #include "appfwk/DAQSink.hpp"
 #include "appfwk/DAQSource.hpp"
-#include "appfwk/ThreadHelper.hpp"
+#include "utilities/WorkerThread.hpp"
 
 #include "trigger/Issues.hpp"
 
@@ -54,6 +54,11 @@ private:
   void do_scrap(const nlohmann::json& obj);
 
   std::string m_hsievent_receive_connection;
+
+  // HSI Passthrough changes
+  std::atomic<bool> m_hsi_passthrough;
+  int m_hsi_pt_before;
+  int m_hsi_pt_after;
 
   triggeralgs::TriggerCandidate HSIEventToTriggerCandidate(const dfmessages::HSIEvent& data);
   void receive_hsievent(ipm::Receiver::Response message);

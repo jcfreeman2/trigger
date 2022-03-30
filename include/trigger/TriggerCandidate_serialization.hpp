@@ -21,6 +21,7 @@ MSGPACK_ADD_ENUM(triggeralgs::TriggerCandidate::Type)
 
 MSGPACK_ADD_ENUM(triggeralgs::TriggerCandidate::Algorithm)
 
+                                 
 DUNE_DAQ_SERIALIZE_NON_INTRUSIVE(triggeralgs,
                                  TriggerCandidate,
                                  time_start,
@@ -30,6 +31,6 @@ DUNE_DAQ_SERIALIZE_NON_INTRUSIVE(triggeralgs,
                                  type,
                                  algorithm,
                                  version,
-                                 ta_list)
+                                 inputs)
 
 #endif // TRIGGER_INCLUDE_TRIGGER_TRIGGERCANDIDATE_SERIALIZATION_HPP_

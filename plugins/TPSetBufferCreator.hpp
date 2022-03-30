@@ -21,7 +21,7 @@
 #include "appfwk/DAQModule.hpp"
 #include "appfwk/DAQSink.hpp"
 #include "appfwk/DAQSource.hpp"
-#include "appfwk/ThreadHelper.hpp"
+#include "utilities/WorkerThread.hpp"
 
 #include <ers/Issue.hpp>
 
@@ -62,7 +62,7 @@ private:
   void do_scrap(const nlohmann::json& obj);
 
   // Threading
-  dunedaq::appfwk::ThreadHelper m_thread;
+  dunedaq::utilities::WorkerThread m_thread;
   void do_work(std::atomic<bool>&);
 
   // Configuration
@@ -95,7 +95,7 @@ private:
   std::map<dfmessages::DataRequest, std::vector<trigger::TPSet>, DataRequestComp>
     m_dr_on_hold; ///< Holds data request when data has not arrived in the buffer yet
 
-  std::unique_ptr<daqdataformats::Fragment> convert_to_fragment(TPSetBuffer::DataRequestOutput,
+  std::unique_ptr<daqdataformats::Fragment> convert_to_fragment(std::vector<TPSet>&,
                                                                 dfmessages::DataRequest);
 
   void send_out_fragment(std::unique_ptr<daqdataformats::Fragment>, std::string, size_t&, std::atomic<bool>&);

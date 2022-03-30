@@ -77,9 +77,11 @@ private:
 
   // Create the next trigger decision
   dfmessages::TriggerDecision create_decision(const triggeralgs::TriggerCandidate& tc);
+  dfmessages::trigger_type_t m_trigger_type_shifted;
+
+  void dfo_busy_callback(ipm::Receiver::Response message);
 
   // Queue sources and sinks
-  std::unique_ptr<appfwk::DAQSink<dfmessages::TriggerDecision>> m_trigger_decision_sink;
   std::unique_ptr<appfwk::DAQSource<triggeralgs::TriggerCandidate>> m_candidate_source;
 
   std::vector<dfmessages::GeoID> m_links;
@@ -88,6 +90,10 @@ private:
 
   // paused state, in which we don't send triggers
   std::atomic<bool> m_paused;
+  std::atomic<bool> m_dfo_is_busy;
+  std::string m_trigger_decision_connection;
+  std::string m_inhibit_connection;
+  std::atomic<bool> m_hsi_passthrough;
 
   dfmessages::trigger_number_t m_last_trigger_number;
 

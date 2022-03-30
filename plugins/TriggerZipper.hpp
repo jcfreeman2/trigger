@@ -17,7 +17,7 @@
 #include "appfwk/DAQModuleHelper.hpp"
 #include "appfwk/DAQSink.hpp"
 #include "appfwk/DAQSource.hpp"
-#include "appfwk/ThreadHelper.hpp"
+#include "utilities/WorkerThread.hpp"
 #include "daqdataformats/GeoID.hpp"
 #include <logging/Logging.hpp>
 
@@ -175,7 +175,31 @@ public:
     if (!m_tardy_counts.count(tset.origin))
       m_tardy_counts[tset.origin] = 0;
 
-    bool accepted = m_zm.feed(m_cache.begin(), tset.start_time, zipper_stream_id(tset.origin));
+
+    // P. Rodrigues 2022-03-03 This is a bit of a hack to ensure that
+    // heartbeat TSETs with the same start_time as payload TSETs will
+    // be output _before_ the payload. I think this is what we want
+    // (and without it, we get out-of-order errors from
+    // TriggerGenericMaker). Consider the following case:
+    //
+    // * We have a heartbeat with start_time (and end_time) 100
+    // * We have payload TSETs with start_time 100 and end_time 200
+    //
+    // The heartbeat TSET encodes the information "you have seen all
+    // TSETs with start times earlier than 100 (but none later)", so
+    // it must be output before the payload TSETs with the same start
+    // time.
+    //
+    // Alternative reasoning: On receipt of a heartbeat,
+    // TriggerGenericMaker flushes its input buffer and processes the
+    // items from the buffer. If we sent the heartbeat _after_ the
+    // payload TSETs in the example above, we would be flushing items
+    // up to the end_time, 200, but the heartbeat only says we've seen
+    // up to timestamp 100
+    ordering_type sort_value = tset.start_time << 1;
+    if(tset.type != TSET::Type::kHeartbeat) sort_value |= 0x1;
+    
+    bool accepted = m_zm.feed(m_cache.begin(), sort_value, zipper_stream_id(tset.origin));
 
     if (!accepted) {
       ++m_n_tardy;

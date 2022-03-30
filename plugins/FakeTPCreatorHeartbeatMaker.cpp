@@ -59,7 +59,7 @@ FakeTPCreatorHeartbeatMaker::do_conf(const nlohmann::json& conf)
 void
 FakeTPCreatorHeartbeatMaker::do_start(const nlohmann::json&)
 {
-  m_thread.start_working_thread("fake-tp-heartbeat-maker");
+  m_thread.start_working_thread("heartbeater");
   TLOG_DEBUG(2) << get_name() + " successfully started.";
 }
 

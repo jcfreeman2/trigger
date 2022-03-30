@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(trigger VERSION 1.2.0)
+project(trigger VERSION 1.3.2)
 
 find_package(daq-cmake REQUIRED)
 
@@ -17,11 +17,21 @@ find_package(nwqueueadapters REQUIRED)
 find_package(utilities REQUIRED)
 find_package(networkmanager REQUIRED)
 find_package(daqdataformats REQUIRED)
+find_package(detdataformats REQUIRED)
+find_package(hdf5libs REQUIRED)
+find_package(CLI11 REQUIRED)
 
 ##############################################################################
 # Main library
 
-daq_add_library(TokenManager.cpp LINK_LIBRARIES appfwk::appfwk logging::logging dfmessages::dfmessages triggeralgs::triggeralgs utilities::utilities)
+daq_add_library(TokenManager.cpp
+  LINK_LIBRARIES
+  appfwk::appfwk
+  logging::logging
+  dfmessages::dfmessages
+  triggeralgs::triggeralgs
+  utilities::utilities
+  detdataformats::detdataformats)
 
 ##############################################################################
 # Codegen
@@ -90,6 +100,8 @@ daq_add_plugin(TASetNQ duneNetworkQueue LINK_LIBRARIES trigger nwqueueadapters::
 
 daq_add_application( set_serialization_speed set_serialization_speed.cxx TEST LINK_LIBRARIES trigger)
 daq_add_application( taset_serialization taset_serialization.cxx TEST LINK_LIBRARIES trigger)
+daq_add_application( check_fragment_TPs check_fragment_TPs.cxx TEST LINK_LIBRARIES trigger hdf5libs::hdf5libs CLI11::CLI11)
+daq_add_application( print_trigger_type print_trigger_type.cxx TEST LINK_LIBRARIES trigger hdf5libs::hdf5libs CLI11::CLI11)
 
 ##############################################################################
 # Unit Tests
@@ -97,7 +109,8 @@ daq_add_application( taset_serialization taset_serialization.cxx TEST LINK_LIBRA
 daq_add_unit_test(TokenManager_test              LINK_LIBRARIES trigger)
 daq_add_unit_test(TxSet_test                     LINK_LIBRARIES trigger)
 daq_add_unit_test(BufferManager_test             LINK_LIBRARIES trigger)
-daq_add_unit_test(TriggerZipper_test LINK_LIBRARIES trigger)
+daq_add_unit_test(TriggerZipper_test             LINK_LIBRARIES trigger)
+daq_add_unit_test(TriggerObjectOverlay_test      LINK_LIBRARIES trigger)
 
 ##############################################################################
 

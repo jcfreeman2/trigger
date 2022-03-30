@@ -11,7 +11,7 @@
 
 #include "daqdataformats/GeoID.hpp"
 #include "daqdataformats/Types.hpp"
-#include "triggeralgs/Types.hpp"
+#include "detdataformats/trigger/Types.hpp"
 
 #include <cstdint>
 #include <vector>
