@@ -104,13 +104,16 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
       size_t n_after = tpset.objects.size();
       TLOG_DEBUG(2) << "Removed " << (n_before - n_after) << " TPs out of " << n_before;
     }
-    
-    try {
-      m_output_queue->push(tpset, m_queue_timeout);
-    } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
-      std::ostringstream oss_warn;
-      oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
-      ers::warning(dunedaq::appfwk::QueueTimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
+
+    // The rule is that we don't send empty TPSets, so ensure that
+    if (!tpset.objects.empty()) {
+      try {
+        m_output_queue->push(tpset, m_queue_timeout);
+      } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+        std::ostringstream oss_warn;
+        oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
+        ers::warning(dunedaq::appfwk::QueueTimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
+      }
     }
     
   } // while(true)
