@@ -52,7 +52,7 @@ private:
 
   // Threading
   void do_work(std::atomic<bool>&, std::vector<TPSet>& tpsets, std::unique_ptr<appfwk::DAQSink<TPSet>>& tpset_sink, std::chrono::steady_clock::time_point earliest_timestamp_time);
-  std::vector<std::thread> m_threads;
+  std::vector<std::unique_ptr<std::thread>> m_threads;
   std::atomic<bool> m_running_flag;
   
   std::vector<TPSet> read_tpsets(std::string filename, int region, int element);

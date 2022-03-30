@@ -89,12 +89,12 @@ TriggerPrimitiveMaker::do_start(const nlohmann::json& /*args*/)
   auto earliest_timestamp_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(10);
 
   for (auto& stream : m_tp_streams) {
-    m_threads.emplace_back(&TriggerPrimitiveMaker::do_work,
-                           this,
-                           std::ref(m_running_flag),
-                           std::ref(stream.tpsets),
-                           std::ref(stream.tpset_sink),
-                           earliest_timestamp_time);
+    m_threads.push_back(std::make_unique<std::thread>(&TriggerPrimitiveMaker::do_work,
+                                                      this,
+                                                      std::ref(m_running_flag),
+                                                      std::ref(stream.tpsets),
+                                                      std::ref(stream.tpset_sink),
+                                                      earliest_timestamp_time));
   }
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Exiting do_start() method";
 }
@@ -105,7 +105,9 @@ TriggerPrimitiveMaker::do_stop(const nlohmann::json& /*args*/)
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Entering do_stop() method";
   m_running_flag.store(false);
   for (auto& thr : m_threads) {
-    thr.join();
+    if (thr != nullptr && thr->joinable()) {
+      thr->join();
+    }
   }
   m_threads.clear();
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Exiting do_stop() method";
