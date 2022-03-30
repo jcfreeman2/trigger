@@ -22,7 +22,6 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include <triggeralgs/Types.hpp>
 #include <vector>
 
 using namespace triggeralgs;

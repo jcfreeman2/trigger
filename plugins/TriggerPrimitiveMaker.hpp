@@ -16,6 +16,7 @@
 #include "appfwk/DAQSource.hpp"
 #include "utilities/WorkerThread.hpp"
 
+#include "triggeralgs/Types.hpp"
 #include "trigger/TPSet.hpp"
 #include "trigger/triggerprimitivemaker/Nljs.hpp"
 
