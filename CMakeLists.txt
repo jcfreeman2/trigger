@@ -59,6 +59,9 @@ daq_codegen(
   tpsetreceiver.jsonnet
   TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
 
+daq_codegen(
+  tpbuffer.jsonnet DEP_PKGS readoutlibs TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
+  
 daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
 ##############################################################################
 # Plugins
