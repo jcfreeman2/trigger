@@ -62,8 +62,6 @@ private:
     // comparable based on first timestamp
     bool operator<(const TPWrapper& other) const
     {
-      // auto thisptr = reinterpret_cast<const dunedaq::detdataformats::WIBHeader*>(&data);        // NOLINT
-      // auto otherptr = reinterpret_cast<const dunedaq::detdataformats::WIBHeader*>(&other.data); // NOLINT
       return this->primitive.time_start < other.primitive.time_start;
     }
 
@@ -72,9 +70,9 @@ private:
       return primitive.time_start;
     }
 
-    void set_first_timestamp(uint64_t) // NOLINT(build/unsigned)
+    void set_first_timestamp(uint64_t ts) // NOLINT(build/unsigned)
     {
-      // No-op. We don't fiddle timestamps
+      primitive.time_start = ts;
     }
 
     uint64_t get_timestamp() const // NOLINT(build/unsigned)
