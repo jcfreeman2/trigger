@@ -87,8 +87,41 @@ TPBuffer::do_scrap(const nlohmann::json& args)
 void
 TPBuffer::do_work(std::atomic<bool>& running_flag)
 {
+  size_t n_tps_received = 0;
+  size_t n_requests_received = 0;
+  
+  while (running_flag.load()) {
+    
+    bool popped_anything=false;
+    
+    try {
+      TPSet tpset;
+      m_input_queue_tps->pop(tpset);
+      popped_anything = true;
+      for (auto const& tp: tpset.objects) {
+        m_latency_buffer_impl->write(TPWrapper(tp));
+        ++n_tps_received;
+      }
+    } catch (const appfwk::QueueTimeoutExpired&) {
+      // It's fine if there was no new input
+    }
 
-  TLOG_DEBUG(2) << "Exiting do_work() method";
+    try {
+      dfmessages::DataRequest data_request;
+      m_input_queue_dr->pop(data_request);
+      popped_anything = true;
+      ++n_requests_received;
+      m_request_handler_impl->issue_request(data_request, *m_output_queue_frag);
+    } catch (const appfwk::QueueTimeoutExpired&) {
+      // It's fine if there was no new input
+    }
+
+    if (!popped_anything) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+  } // while (running_flag.load())
+
+  TLOG() << get_name() << " exiting do_work() method. Received " << n_tps_received << " TPs " << " and " << n_requests_received << " data requests";
 }
 
 } // namespace trigger
