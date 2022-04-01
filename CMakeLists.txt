@@ -6,7 +6,7 @@ find_package(daq-cmake REQUIRED)
 daq_setup_environment()
 
 find_package(ers REQUIRED)
-find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS iostreams unit_test_framework REQUIRED)
 find_package(serialization REQUIRED)
 find_package(logging REQUIRED)
 find_package(appfwk REQUIRED)
@@ -32,7 +32,8 @@ daq_add_library(TokenManager.cpp
   dfmessages::dfmessages
   triggeralgs::triggeralgs
   utilities::utilities
-  detdataformats::detdataformats)
+  detdataformats::detdataformats
+  Boost::iostreams) # Boost::iostreams comes in via readoutlibs
 
 ##############################################################################
 # Codegen
