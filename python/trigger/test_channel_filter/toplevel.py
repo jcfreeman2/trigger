@@ -15,8 +15,8 @@ import click
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-s', '--slowdown-factor', default=1.0)
 @click.option('-f', '--input-file', type=click.Path(exists=True, dir_okay=False), multiple=True)
-@click.option('--keep-collection', is_flag=True, default=True, show_default=True, help="Keep collection TPs")
-@click.option('--keep-induction', is_flag=True, default=True, show_default=True, help="Keep induction TPs")
+@click.option('--keep-collection/--discard-collection', is_flag=True, default=True, show_default=True, help="Keep/discard collection TPs")
+@click.option('--keep-induction/--discard-induction', is_flag=True, default=True, show_default=True, help="Keep/discard induction TPs")
 @click.option('--channel-map-name', type=click.Choice(["VDColdboxChannelMap", "ProtoDUNESP1ChannelMap"]), default="ProtoDUNESP1ChannelMap", help="Channel map name")
 @click.argument('json_dir', type=click.Path())
 def cli(slowdown_factor, input_file, keep_collection, keep_induction, channel_map_name, json_dir):
