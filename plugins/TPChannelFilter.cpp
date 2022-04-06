@@ -71,9 +71,19 @@ bool
 TPChannelFilter::channel_should_be_removed(int channel) const
 {
   // The plane numbering convention is found in detchannelmaps/plugins/VDColdboxChannelMap.cpp and is:
-  // U = 0, Y = 1, Z = 2
+  // U = 0, Y = 1, Z =2
   uint plane = m_channel_map->get_plane_from_offline_channel(channel);
-  return ((plane == 0 || plane == 1) && m_conf.keep_induction) || (plane == 2 && m_conf.keep_collection);
+  // Check for collection
+  if (plane == 0 || plane == 1) {
+    return !m_conf.keep_collection;
+  }
+  // Check for induction
+  if (plane == 2) {
+    return !m_conf.keep_induction;
+  }
+  // Unknown plane?!
+  TLOG() << "Encountered unexpected plane " << plane << " from channel " << channel << ", check channel map?";
+  return false;
 }
 
 void
@@ -94,7 +104,7 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
     }
 
     // Actually do the removal for payload TPSets. Leave heartbeat TPSets unmolested
-    
+
     if (tpset.type == TPSet::kPayload) {
       size_t n_before = tpset.objects.size();
       auto it = std::remove_if(tpset.objects.begin(), tpset.objects.end(), [this](triggeralgs::TriggerPrimitive p) {
@@ -112,10 +122,11 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
       } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
         std::ostringstream oss_warn;
         oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
-        ers::warning(dunedaq::appfwk::QueueTimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
+        ers::warning(
+          dunedaq::appfwk::QueueTimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
       }
     }
-    
+
   } // while(true)
   TLOG_DEBUG(2) << "Exiting do_work() method";
 }
