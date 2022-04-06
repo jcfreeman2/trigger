@@ -12,6 +12,7 @@
 
 #include "appfwk/DAQModuleHelper.hpp"
 #include "appfwk/cmd/Nljs.hpp"
+#include "rcif/cmd/Nljs.hpp"
 
 #include "logging/Logging.hpp"
 
@@ -77,9 +78,13 @@ TriggerPrimitiveMaker::do_configure(const nlohmann::json& obj)
 }
 
 void
-TriggerPrimitiveMaker::do_start(const nlohmann::json& /*args*/)
+TriggerPrimitiveMaker::do_start(const nlohmann::json& args)
 {
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Entering do_start() method";
+
+  rcif::cmd::StartParams start_params = args.get<rcif::cmd::StartParams>();
+  m_run_number = start_params.run;
+
   m_running_flag.store(true);
 
   // We need the wall-clock time at which we'll send out the TPSet
@@ -178,7 +183,6 @@ TriggerPrimitiveMaker::read_tpsets(std::string filename, int region, int element
     // We don't send empty TPSets, so there's no point creating them
     tpsets.push_back(tpset);
   }
-
   TLOG_DEBUG(0) << "Read " << seqno << " TPs into " << tpsets.size() << " TPSets, from file " << filename;  
   return tpsets;
 }
@@ -259,6 +263,7 @@ TriggerPrimitiveMaker::do_work(std::atomic<bool>& running_flag,
         ++push_failed_count;
       }
 
+      tpset.run_number = m_run_number;
       // Increase seqno and the timestamps in the TPSet and TPs so they don't
       // repeat when we do multiple loops over the file
       tpset.start_time += total_stream_duration;

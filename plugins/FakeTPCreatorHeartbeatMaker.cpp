@@ -8,6 +8,8 @@
 
 #include "FakeTPCreatorHeartbeatMaker.hpp"
 
+#include "rcif/cmd/Nljs.hpp"
+
 #include <string>
 
 namespace dunedaq {
@@ -57,8 +59,11 @@ FakeTPCreatorHeartbeatMaker::do_conf(const nlohmann::json& conf)
 }
 
 void
-FakeTPCreatorHeartbeatMaker::do_start(const nlohmann::json&)
+FakeTPCreatorHeartbeatMaker::do_start(const nlohmann::json& args)
 {
+  rcif::cmd::StartParams start_params = args.get<rcif::cmd::StartParams>();
+  m_run_number = start_params.run;
+  
   m_thread.start_working_thread("heartbeater");
   TLOG_DEBUG(2) << get_name() + " successfully started.";
 }
@@ -170,6 +175,7 @@ FakeTPCreatorHeartbeatMaker::get_heartbeat(TPSet& tpset_heartbeat,
   tpset_heartbeat.type = TPSet::Type::kHeartbeat;
   tpset_heartbeat.start_time = current_tpset_start_time;
   tpset_heartbeat.end_time = current_tpset_start_time;
+  tpset_heartbeat.run_number = m_run_number;
 }
 
 } // namespace trigger

@@ -59,6 +59,9 @@ private:
 
   // Configuration
   triggerprimitivemaker::ConfParams m_conf;
+
+  daqdataformats::run_number_t m_run_number{ daqdataformats::TypeDefaults::s_invalid_run_number };
+
   nlohmann::json m_init_obj; // Stash this so we know name -> instance mappings
 
   struct TPStream {

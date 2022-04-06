@@ -41,6 +41,9 @@ public:
   using seqno_t = uint64_t; // NOLINT(build/unsigned)
   seqno_t seqno{ 0 };
 
+  // The current run number
+  daqdataformats::run_number_t run_number{ 0 };
+  
   // Identify the instance creator/stream/source of this set.
   origin_t origin{ daqdataformats::GeoID(daqdataformats::GeoID::SystemType::kDataSelection,
                                          daqdataformats::GeoID::s_invalid_region_id,
