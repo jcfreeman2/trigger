@@ -25,7 +25,7 @@ find_package(CLI11 REQUIRED)
 ##############################################################################
 # Main library
 
-daq_add_library(TokenManager.cpp
+daq_add_library(TokenManager.cpp LivetimeCounter.cpp
   LINK_LIBRARIES
   appfwk::appfwk
   logging::logging

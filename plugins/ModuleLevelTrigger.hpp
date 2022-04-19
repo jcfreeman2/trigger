@@ -15,6 +15,7 @@
 #define TRIGGER_PLUGINS_MODULELEVELTRIGGER_HPP_
 
 #include "trigger/TokenManager.hpp"
+#include "trigger/LivetimeCounter.hpp"
 #include "trigger/moduleleveltriggerinfo/InfoNljs.hpp"
 
 #include "triggeralgs/TriggerCandidate.hpp"
@@ -104,6 +105,10 @@ private:
   // Are we in a configured state, ie after conf and before scrap?
   std::atomic<bool> m_configured_flag{ false };
 
+  // LivetimeCounter
+  std::shared_ptr<LivetimeCounter> m_livetime_counter;
+  LivetimeCounter::state_time_t deadtime;
+
   // Opmon variables
   using metric_counter_type = decltype(moduleleveltriggerinfo::Info::tc_received_count);
   std::atomic<metric_counter_type> m_tc_received_count{ 0 };
@@ -112,6 +117,7 @@ private:
   std::atomic<metric_counter_type> m_td_paused_count{ 0 };
   std::atomic<metric_counter_type> m_td_total_count{ 0 };
   std::atomic<metric_counter_type> m_td_queue_timeout_expired_err_count{ 0 };
+  std::atomic<metric_counter_type> m_lc_total_deadtime{ 0 };
 };
 } // namespace trigger
 } // namespace dunedaq

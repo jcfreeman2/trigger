@@ -7,6 +7,7 @@
  */
 
 #include "trigger/TokenManager.hpp"
+#include "trigger/LivetimeCounter.hpp"
 
 #include "networkmanager/NetworkManager.hpp"
 
@@ -17,10 +18,12 @@ namespace dunedaq::trigger {
 
 TokenManager::TokenManager(const std::string& connection_name,
                            int initial_tokens,
-                           daqdataformats::run_number_t run_number)
+                           daqdataformats::run_number_t run_number,
+                           std::shared_ptr<LivetimeCounter> livetime_counter)
   : m_n_tokens(initial_tokens)
   , m_connection_name(connection_name)
   , m_run_number(run_number)
+  , m_livetime_counter(livetime_counter)
 
 {
 
@@ -74,6 +77,9 @@ TokenManager::trigger_sent(dfmessages::trigger_number_t trigger_number)
   std::lock_guard<std::mutex> lk(m_open_trigger_decisions_mutex);
   m_open_trigger_decisions.insert(trigger_number);
   m_n_tokens--;
+  if(m_n_tokens.load()==0) {
+    m_livetime_counter->set_state(LivetimeCounter::State::kDead);
+  }
 }
 
 void
@@ -84,6 +90,9 @@ TokenManager::receive_token(ipm::Receiver::Response message)
 
   TLOG_DEBUG(1) << "Received token with run number " << token.run_number << ", current run number " << m_run_number;
   if (token.run_number == m_run_number) {
+    if(m_n_tokens.load()==0){
+      m_livetime_counter->set_state(LivetimeCounter::State::kLive);
+    }
     m_n_tokens++;
     TLOG_DEBUG(1) << "There are now " << m_n_tokens.load() << " tokens available";
 
