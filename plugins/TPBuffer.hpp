@@ -132,4 +132,17 @@ private:
 } // namespace trigger
 } // namespace dunedaq
 
+namespace dunedaq {
+namespace readoutlibs {
+
+template<>
+uint64_t
+get_frame_iterator_timestamp(triggeralgs::TriggerPrimitive* prim)
+{
+  return prim->time_start;
+}
+
+}
+}
+
 #endif // TRIGGER_PLUGINS_TPBUFFER_HPP_
