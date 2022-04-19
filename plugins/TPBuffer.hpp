@@ -22,9 +22,6 @@
 #include "trigger/Issues.hpp"
 #include "trigger/TPSet.hpp"
 
-#include "trigger/faketpcreatorheartbeatmaker/Nljs.hpp"
-#include "trigger/faketpcreatorheartbeatmakerinfo/InfoNljs.hpp"
-
 #include <chrono>
 #include <map>
 #include <memory>
