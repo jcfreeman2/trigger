@@ -257,7 +257,7 @@ ModuleLevelTrigger::send_trigger_decisions()
          << m_td_paused_count << " TDs were created during pause, and " << m_td_inhibited_count.load()
          << " TDs were inhibited.";
 
-  deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
+  deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead) + m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
   m_lc_total_deadtime = deadtime;
 }
 
