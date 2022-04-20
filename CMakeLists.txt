@@ -60,7 +60,7 @@ daq_codegen(
   TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
 
 daq_codegen(
-  tpbuffer.jsonnet DEP_PKGS readoutlibs TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
+  txbuffer.jsonnet DEP_PKGS readoutlibs TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
   
 daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
 ##############################################################################
