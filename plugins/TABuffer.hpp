@@ -17,6 +17,7 @@
 #include "readoutlibs/FrameErrorRegistry.hpp"
 #include "readoutlibs/models/DefaultRequestHandlerModel.hpp"
 #include "readoutlibs/models/BinarySearchQueueModel.hpp"
+#include "triggeralgs/TriggerObjectOverlay.hpp"
 #include "triggeralgs/TriggerPrimitive.hpp"
 #include "utilities/WorkerThread.hpp"
 
@@ -49,13 +50,22 @@ private:
   struct TAWrapper
   {
     triggeralgs::TriggerActivity activity;
-
+    std::vector<uint8_t> activity_overlay_buffer;
+    
     // Don't really want this default ctor, but IterableQueueModel requires it
     TAWrapper() {}
     
-    TAWrapper(triggeralgs::TriggerActivity p)
-      : activity(p)
-    {}
+    TAWrapper(triggeralgs::TriggerActivity a)
+      : activity(a)
+    {
+      populate_buffer();
+    }
+
+    void populate_buffer()
+    {
+      activity_overlay_buffer.resize(triggeralgs::get_overlay_nbytes(activity));
+      triggeralgs::write_overlay(activity, activity_overlay_buffer.data());
+    }
     
     // comparable based on first timestamp
     bool operator<(const TAWrapper& other) const
@@ -78,21 +88,20 @@ private:
       return activity.time_start;
     }
 
-
-    size_t get_payload_size() { return sizeof(triggeralgs::TriggerActivity); }
+    size_t get_payload_size() { return activity_overlay_buffer.size(); }
 
     size_t get_num_frames() { return 1; }
 
     size_t get_frame_size() { return get_payload_size(); }
 
-    triggeralgs::TriggerActivity* begin()
+    uint8_t* begin()
     {
-      return &activity;
+      return activity_overlay_buffer.data();
     }
     
-    triggeralgs::TriggerActivity* end()
+    uint8_t* end()
     {
-      return &activity + 1;
+      return activity_overlay_buffer.data()+activity_overlay_buffer.size();
     }
 
     //static const constexpr size_t fixed_payload_size = 5568;
@@ -100,6 +109,7 @@ private:
     static const constexpr daqdataformats::FragmentType fragment_type = daqdataformats::FragmentType::kTriggerActivities;
     // No idea what this should really be set to
     static const constexpr uint64_t expected_tick_difference = 16; // NOLINT(build/unsigned)
+
 };
 
   void do_conf(const nlohmann::json& config);
@@ -138,9 +148,10 @@ namespace readoutlibs {
 
 template<>
 uint64_t
-get_frame_iterator_timestamp(triggeralgs::TriggerActivity* activity)
+get_frame_iterator_timestamp(uint8_t* it)
 {
-  return activity->time_start;
+  detdataformats::trigger::TriggerActivity* activity = reinterpret_cast<detdataformats::trigger::TriggerActivity*>(it);
+  return activity->data.time_start;
 }
 
 }
