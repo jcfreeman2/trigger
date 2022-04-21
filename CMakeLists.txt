@@ -102,7 +102,7 @@ daq_add_plugin(TriggerDecisionMakerSupernovaPlugin duneTDMaker LINK_LIBRARIES tr
 daq_add_plugin(TPSetNQ duneNetworkQueue LINK_LIBRARIES trigger nwqueueadapters::nwqueueadapters)
 daq_add_plugin(TPSetReceiver duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TASetNQ duneNetworkQueue LINK_LIBRARIES trigger nwqueueadapters::nwqueueadapters)
-
+daq_add_plugin(TriggerCandidateNQ duneNetworkQueue LINK_LIBRARIES trigger nwqueueadapters::nwqueueadapters)
 ##############################################################################
 # Integration tests
 
