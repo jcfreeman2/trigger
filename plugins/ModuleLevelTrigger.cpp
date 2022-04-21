@@ -70,7 +70,9 @@ ModuleLevelTrigger::get_info(opmonlib::InfoCollector& ci, int /*level*/)
   i.td_inhibited_count = m_td_inhibited_count.load();
   i.td_paused_count = m_td_paused_count.load();
   i.td_total_count = m_td_total_count.load();
-  i.lc_total_deadtime = m_lc_total_deadtime.load(); 
+  i.lc_kLive = m_lc_kLive.load(); 
+  i.lc_kPaused = m_lc_kPaused.load();
+  i.lc_kDead = m_lc_kDead.load();
 
   ci.add(i);
 }
@@ -117,8 +119,9 @@ ModuleLevelTrigger::do_stop(const nlohmann::json& /*stopobj*/)
 {
   m_running_flag.store(false);
   m_send_trigger_decisions_thread.join();
-
-  TLOG(3) << "LivetimeCounter - total deadtime: " << deadtime << std::endl;
+  
+  m_lc_deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead) + m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+  TLOG(3) << "LivetimeCounter - total deadtime: " << m_lc_deadtime << std::endl;
   m_livetime_counter.reset(); // Calls LivetimeCounter dtor?
 
   networkmanager::NetworkManager::get().clear_callback(m_inhibit_connection);
@@ -182,8 +185,6 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
     decision.components.push_back(request);
   }
 
-  
-
   return decision;
 }
 
@@ -200,7 +201,9 @@ ModuleLevelTrigger::send_trigger_decisions()
   m_td_inhibited_count.store(0);
   m_td_paused_count.store(0);
   m_td_total_count.store(0);
-  m_lc_total_deadtime.store(0);
+  m_lc_kLive.store(0);
+  m_lc_kPaused.store(0);
+  m_lc_kDead.store(0);
 
   while (true) {
     triggeralgs::TriggerCandidate tc;
@@ -257,8 +260,14 @@ ModuleLevelTrigger::send_trigger_decisions()
          << m_td_paused_count << " TDs were created during pause, and " << m_td_inhibited_count.load()
          << " TDs were inhibited.";
 
-  deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead) + m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
-  m_lc_total_deadtime = deadtime;
+  m_lc_kLive_count = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
+  m_lc_kPaused_count = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+  m_lc_kDead_count = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
+  m_lc_kLive = m_lc_kLive_count;
+  m_lc_kPaused = m_lc_kPaused_count;
+  m_lc_kDead = m_lc_kDead_count; 
+
+  m_lc_deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead) + m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
 }
 
 void

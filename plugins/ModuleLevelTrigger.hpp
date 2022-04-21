@@ -107,7 +107,10 @@ private:
 
   // LivetimeCounter
   std::shared_ptr<LivetimeCounter> m_livetime_counter;
-  LivetimeCounter::state_time_t deadtime;
+  LivetimeCounter::state_time_t m_lc_kLive_count;
+  LivetimeCounter::state_time_t m_lc_kPaused_count;
+  LivetimeCounter::state_time_t m_lc_kDead_count;
+  LivetimeCounter::state_time_t m_lc_deadtime;
 
   // Opmon variables
   using metric_counter_type = decltype(moduleleveltriggerinfo::Info::tc_received_count);
@@ -117,7 +120,9 @@ private:
   std::atomic<metric_counter_type> m_td_paused_count{ 0 };
   std::atomic<metric_counter_type> m_td_total_count{ 0 };
   std::atomic<metric_counter_type> m_td_queue_timeout_expired_err_count{ 0 };
-  std::atomic<metric_counter_type> m_lc_total_deadtime{ 0 };
+  std::atomic<metric_counter_type> m_lc_kLive{ 0 };
+  std::atomic<metric_counter_type> m_lc_kPaused{ 0 };
+  std::atomic<metric_counter_type> m_lc_kDead{ 0 };
 };
 } // namespace trigger
 } // namespace dunedaq

@@ -16,7 +16,9 @@ local info = {
        s.field("td_inhibited_count",                 self.uint8, 0, doc="Number of trigger decisions inhibited."), 
        s.field("td_paused_count",                    self.uint8, 0, doc="Number of trigger decisions created during pause mode."), 
        s.field("td_total_count",                     self.uint8, 0, doc="Total number of trigger decisions created."),
-       s.field("lc_total_deadtime",		     self.uint8, 0, doc="Total deadtime accumulated this run.") 
+       s.field("lc_kLive",			     self.uint8, 0, doc="Total time [ms] spent in Live state - alive to triggers."),
+       s.field("lc_kPaused",                         self.uint8, 0, doc="Total time [ms] spent in Paused state - paused to triggers."),
+       s.field("lc_kDead",                           self.uint8, 0, doc="Total time [ms[ spent in Dead state - dead to triggers.") 
    ], doc="Module level trigger information")
 };
 
