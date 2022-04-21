@@ -82,12 +82,6 @@ private:
       candidate.time_start = ts;
     }
 
-    uint64_t get_timestamp() const // NOLINT(build/unsigned)
-    {
-      return candidate.time_start;
-    }
-
-
     size_t get_payload_size() { return candidate_overlay_buffer.size(); }
 
     size_t get_num_frames() { return 1; }
