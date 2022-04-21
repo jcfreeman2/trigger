@@ -101,7 +101,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
       }
     }
 
-    TLOG_DEBUG(2) << "Activity received.";
+    TLOG_DEBUG(3) << "Activity received.";
 
     daqdataformats::timestamp_t current_tpset_start_time = tpset.start_time;
 
