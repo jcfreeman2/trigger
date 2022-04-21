@@ -66,13 +66,15 @@ ModuleLevelTrigger::get_info(opmonlib::InfoCollector& ci, int /*level*/)
   moduleleveltriggerinfo::Info i;
 
   i.tc_received_count = m_tc_received_count.load();
+
   i.td_sent_count = m_td_sent_count.load();
   i.td_inhibited_count = m_td_inhibited_count.load();
   i.td_paused_count = m_td_paused_count.load();
   i.td_total_count = m_td_total_count.load();
-  i.lc_kLive = m_lc_kLive.load(); 
-  i.lc_kPaused = m_lc_kPaused.load();
-  i.lc_kDead = m_lc_kDead.load();
+
+  i.lc_kLive = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
+  m_lc_kPaused = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+  m_lc_kDead = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
 
   ci.add(i);
 }
@@ -121,7 +123,7 @@ ModuleLevelTrigger::do_stop(const nlohmann::json& /*stopobj*/)
   m_send_trigger_decisions_thread.join();
   
   m_lc_deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead) + m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
-  TLOG(3) << "LivetimeCounter - total deadtime: " << m_lc_deadtime << std::endl;
+  TLOG(3) << "LivetimeCounter - total deadtime+paused: " << m_lc_deadtime << std::endl;
   m_livetime_counter.reset(); // Calls LivetimeCounter dtor?
 
   networkmanager::NetworkManager::get().clear_callback(m_inhibit_connection);
