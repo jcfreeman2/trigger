@@ -11,20 +11,25 @@ import moo.otypes
 moo.otypes.load_types('trigger/triggerprimitivemaker.jsonnet')
 moo.otypes.load_types('trigger/triggerzipper.jsonnet')
 moo.otypes.load_types('trigger/faketpcreatorheartbeatmaker.jsonnet')
+moo.otypes.load_types('trigger/tpchannelfilter.jsonnet')
 
 # Import new types
 import dunedaq.trigger.triggerprimitivemaker as tpm
 import dunedaq.trigger.triggerzipper as tzip
 import dunedaq.trigger.faketpcreatorheartbeatmaker as ftpchm
+import dunedaq.trigger.tpchannelfilter as chan_filter
 
 from appfwk.app import App, ModuleGraph
 from appfwk.daqmodule import DAQModule
 from appfwk.conf_utils import Direction, Connection
 
-class FakeTPToSinkApp(App):
+class TestChannelFilterApp(App):
     def __init__(self,
                  INPUT_FILES: [str],
-                 SLOWDOWN_FACTOR: float):
+                 SLOWDOWN_FACTOR: float,
+                 CHANNEL_MAP_NAME: str,
+                 KEEP_COLLECTION: bool,
+                 KEEP_INDUCTION: bool):
 
         clock_frequency_hz = 50_000_000 / SLOWDOWN_FACTOR
         modules = []
@@ -37,7 +42,7 @@ class FakeTPToSinkApp(App):
                                    output_sink_name = f"output{istream}")
                       for istream,input_file in enumerate(INPUT_FILES)]
 
-        tpm_connections = { f"output{istream}" : Connection(f"ftpchm{istream}.tpset_source")
+        tpm_connections = { f"output{istream}" : Connection(f"chan_filter{istream}.tpset_source")
                             for istream in range(n_streams) }
         modules.append(DAQModule(name = "tpm",
                                  plugin = "TriggerPrimitiveMaker",
@@ -50,9 +55,16 @@ class FakeTPToSinkApp(App):
                                  connections = tpm_connections))
 
         for istream in range(n_streams):
+            modules.append(DAQModule(name = f"chan_filter{istream}",
+                                     plugin = "TPChannelFilter",
+                                     conf = chan_filter.Conf(channel_map_name=CHANNEL_MAP_NAME,
+                                                             keep_collection=KEEP_COLLECTION,
+                                                             keep_induction=KEEP_INDUCTION),
+                                     connections = {"tpset_sink" : Connection(f"ftpchm{istream}.tpset_source")}))
+
             modules.append(DAQModule(name = f"ftpchm{istream}",
                                      plugin = "FakeTPCreatorHeartbeatMaker",
-                                     conf = ftpchm.Conf(heartbeat_interval = 50000),
+                                     conf = ftpchm.Conf(heartbeat_interval = 500_000),
                                      connections = {"tpset_sink" : Connection("zip.input")}))
 
         modules.append(DAQModule(name = "zip",

@@ -16,6 +16,7 @@
 #include "appfwk/DAQSource.hpp"
 #include "utilities/WorkerThread.hpp"
 
+#include "triggeralgs/Types.hpp"
 #include "trigger/TPSet.hpp"
 #include "trigger/triggerprimitivemaker/Nljs.hpp"
 
@@ -50,15 +51,31 @@ private:
   void do_scrap(const nlohmann::json& obj);
 
   // Threading
-  dunedaq::utilities::WorkerThread m_thread;
-  void do_work(std::atomic<bool>&);
+  void do_work(std::atomic<bool>&, std::vector<TPSet>& tpsets, std::unique_ptr<appfwk::DAQSink<TPSet>>& tpset_sink, std::chrono::steady_clock::time_point earliest_timestamp_time);
+  std::vector<std::unique_ptr<std::thread>> m_threads;
+  std::atomic<bool> m_running_flag;
+  
+  std::vector<TPSet> read_tpsets(std::string filename, int region, int element);
 
   // Configuration
   triggerprimitivemaker::ConfParams m_conf;
-  std::unique_ptr<appfwk::DAQSink<TPSet>> m_tpset_sink;
-  std::vector<TPSet> m_tpsets;
+
+  daqdataformats::run_number_t m_run_number{ daqdataformats::TypeDefaults::s_invalid_run_number };
+
+  nlohmann::json m_init_obj; // Stash this so we know name -> instance mappings
+
+  struct TPStream {
+    std::unique_ptr<appfwk::DAQSink<TPSet>> tpset_sink;
+    std::vector<TPSet> tpsets;
+  };
+
+  std::vector<TPStream> m_tp_streams;
 
   std::chrono::milliseconds m_queue_timeout;
+
+  // Variables to keep track of the total time span of multiple TP streams
+  triggeralgs::timestamp_t m_earliest_first_tpset_timestamp;
+  triggeralgs::timestamp_t m_latest_last_tpset_timestamp;
 };
 } // namespace trigger
 } // namespace dunedaq

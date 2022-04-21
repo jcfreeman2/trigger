@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(trigger VERSION 1.3.2)
+project(trigger VERSION 1.3.4)
 
 find_package(daq-cmake REQUIRED)
 
@@ -18,6 +18,7 @@ find_package(utilities REQUIRED)
 find_package(networkmanager REQUIRED)
 find_package(daqdataformats REQUIRED)
 find_package(detdataformats REQUIRED)
+find_package(detchannelmaps REQUIRED)
 find_package(hdf5libs REQUIRED)
 find_package(readoutlibs REQUIRED)
 find_package(CLI11 REQUIRED)
@@ -33,7 +34,8 @@ daq_add_library(TokenManager.cpp
   triggeralgs::triggeralgs
   utilities::utilities
   detdataformats::detdataformats
-  Boost::iostreams) # Boost::iostreams comes in via readoutlibs
+  Boost::iostreams # Boost::iostreams comes in via readoutlibs
+  detchannelmaps::detchannelmaps)
 
 ##############################################################################
 # Codegen
@@ -57,6 +59,7 @@ daq_codegen(
   triggerzipper.jsonnet
   tpsetbuffercreator.jsonnet
   tpsetreceiver.jsonnet
+  tpchannelfilter.jsonnet
   TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
 
 daq_codegen(
@@ -83,6 +86,7 @@ daq_add_plugin(TPSetBufferCreator duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TPBuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
 daq_add_plugin(TABuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
 daq_add_plugin(TCBuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
+daq_add_plugin(TPChannelFilter duneDAQModule LINK_LIBRARIES trigger)
 
 daq_add_plugin(TPZipper duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TAZipper duneDAQModule LINK_LIBRARIES trigger)
@@ -92,6 +96,8 @@ daq_add_plugin(TCZipper duneDAQModule LINK_LIBRARIES trigger)
 # Algorithm plugins
 daq_add_plugin(TriggerActivityMakerADCSimpleWindowPlugin duneTAMaker LINK_LIBRARIES trigger)
 daq_add_plugin(TriggerCandidateMakerADCSimpleWindowPlugin duneTCMaker LINK_LIBRARIES trigger)
+daq_add_plugin(TriggerActivityMakerHorizontalMuonPlugin duneTAMaker LINK_LIBRARIES trigger)
+daq_add_plugin(TriggerCandidateMakerHorizontalMuonPlugin duneTCMaker LINK_LIBRARIES trigger)
 daq_add_plugin(TriggerActivityMakerPrescalePlugin duneTAMaker LINK_LIBRARIES trigger)
 daq_add_plugin(TriggerCandidateMakerPrescalePlugin duneTCMaker LINK_LIBRARIES trigger)
 daq_add_plugin(TriggerActivityMakerSupernovaPlugin duneTAMaker LINK_LIBRARIES trigger)

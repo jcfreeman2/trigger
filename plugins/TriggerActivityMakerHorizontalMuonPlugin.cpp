@@ -1,5 +1,5 @@
 /**
- * @file TriggerCandidateMakerADCSimpleWindow.cpp
+ * @file TriggerActivityMakerHorizontalMuon.cpp
  *
  * This is part of the DUNE DAQ Application Framework, copyright 2020.
  * Licensing/copyright details are in the COPYING file that you should have
@@ -7,6 +7,6 @@
  */
 
 #include "trigger/AlgorithmPlugins.hpp"
-#include "triggeralgs/ADCSimpleWindow/TriggerCandidateMakerADCSimpleWindow.hpp"
+#include "triggeralgs/HorizontalMuon/TriggerActivityMakerHorizontalMuon.hpp"
 
-DEFINE_DUNE_TC_MAKER(triggeralgs::TriggerCandidateMakerADCSimpleWindow)
+DEFINE_DUNE_TA_MAKER(triggeralgs::TriggerActivityMakerHorizontalMuon)

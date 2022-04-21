@@ -15,21 +15,27 @@ import click
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('-s', '--slowdown-factor', default=1.0)
 @click.option('-f', '--input-file', type=click.Path(exists=True, dir_okay=False), multiple=True)
+@click.option('--keep-collection/--discard-collection', is_flag=True, default=True, show_default=True, help="Keep/discard collection TPs")
+@click.option('--keep-induction/--discard-induction', is_flag=True, default=True, show_default=True, help="Keep/discard induction TPs")
+@click.option('--channel-map-name', type=click.Choice(["VDColdboxChannelMap", "ProtoDUNESP1ChannelMap"]), default="ProtoDUNESP1ChannelMap", help="Channel map name")
 @click.argument('json_dir', type=click.Path())
-def cli(slowdown_factor, input_file, json_dir):
+def cli(slowdown_factor, input_file, keep_collection, keep_induction, channel_map_name, json_dir):
     """
       JSON_DIR: Json file output folder
     """
 
-    the_system = System("faketp_to_sink_partition")
+    the_system = System("test_channel_filter_partition")
     
     console.log("Loading faketp config generator")
-    from .faketp_to_sink import FakeTPToSinkApp
+    from .test_channel_filter import TestChannelFilterApp
     console.log(f"Generating configs")
 
-    the_system.apps["faketp_to_sink"] = FakeTPToSinkApp(
+    the_system.apps["test_channel_filter"] = TestChannelFilterApp(
         INPUT_FILES = input_file,
         SLOWDOWN_FACTOR = slowdown_factor,
+        KEEP_COLLECTION = keep_collection,
+        KEEP_INDUCTION = keep_induction,
+        CHANNEL_MAP_NAME = channel_map_name
     )
 
     from appfwk.conf_utils import make_app_command_data, make_system_command_datas, generate_boot, write_json_files
