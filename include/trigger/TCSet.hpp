@@ -22,6 +22,6 @@ using TCSet = Set<triggeralgs::TriggerCandidate>;
 } // namespace dunedaq::trigger
 
 MSGPACK_ADD_ENUM(dunedaq::trigger::TCSet::Type)
-DUNE_DAQ_SERIALIZE_NON_INTRUSIVE(dunedaq::trigger, TCSet, seqno, origin, type, start_time, end_time, objects)
+DUNE_DAQ_SERIALIZE_NON_INTRUSIVE(dunedaq::trigger, TCSet, seqno, run_number, origin, type, start_time, end_time, objects)
 
 #endif // TRIGGER_INCLUDE_TRIGGER_TCSET_HPP_
