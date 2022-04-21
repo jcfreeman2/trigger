@@ -72,9 +72,11 @@ ModuleLevelTrigger::get_info(opmonlib::InfoCollector& ci, int /*level*/)
   i.td_paused_count = m_td_paused_count.load();
   i.td_total_count = m_td_total_count.load();
 
-  i.lc_kLive = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
-  m_lc_kPaused = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
-  m_lc_kDead = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
+  if (m_livetime_counter.get() != nullptr) {
+    i.lc_kLive = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
+    m_lc_kPaused = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+    m_lc_kDead = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
+  }
 
   ci.add(i);
 }
