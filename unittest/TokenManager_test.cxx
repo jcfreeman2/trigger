@@ -13,6 +13,7 @@
 #include "networkmanager/nwmgr/Structs.hpp"
 
 #include "trigger/TokenManager.hpp"
+#include "trigger/LivetimeCounter.hpp"
 
 /**
  * @brief Name of this test module
@@ -61,7 +62,8 @@ BOOST_AUTO_TEST_CASE(Basics)
 
   int initial_tokens = 10;
   daqdataformats::run_number_t run_number = 1;
-  trigger::TokenManager tm("foo", initial_tokens, run_number);
+  auto livetime_counter=std::make_shared<trigger::LivetimeCounter>(trigger::LivetimeCounter::State::kPaused);
+  trigger::TokenManager tm("foo", initial_tokens, run_number, livetime_counter);
 
   BOOST_CHECK_EQUAL(tm.get_n_tokens(), initial_tokens);
   BOOST_CHECK_EQUAL(tm.triggers_allowed(), true);

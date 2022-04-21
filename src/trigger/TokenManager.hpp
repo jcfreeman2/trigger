@@ -17,6 +17,8 @@
 
 #include "ipm/Receiver.hpp"
 
+#include "LivetimeCounter.hpp"
+
 #include <atomic>
 #include <chrono>
 #include <memory>
@@ -41,7 +43,7 @@ namespace trigger {
 class TokenManager
 {
 public:
-  TokenManager(const std::string& connection_name, int initial_tokens, daqdataformats::run_number_t run_number);
+  TokenManager(const std::string& connection_name, int initial_tokens, daqdataformats::run_number_t run_number, std::shared_ptr<LivetimeCounter> livetime_counter);
 
   virtual ~TokenManager();
 
@@ -82,6 +84,8 @@ private:
   // The currently-in-flight trigger decisions, and a mutex to guard it
   std::set<dfmessages::trigger_number_t> m_open_trigger_decisions;
   std::mutex m_open_trigger_decisions_mutex;
+
+  std::shared_ptr<LivetimeCounter> m_livetime_counter;
 
   std::string m_connection_name;
   daqdataformats::run_number_t m_run_number;

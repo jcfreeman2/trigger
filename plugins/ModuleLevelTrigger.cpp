@@ -19,6 +19,7 @@
 
 #include "trigger/Issues.hpp"
 #include "trigger/moduleleveltrigger/Nljs.hpp"
+#include "trigger/LivetimeCounter.hpp"
 
 #include "timinglibs/TimestampEstimator.hpp"
 
@@ -65,10 +66,15 @@ ModuleLevelTrigger::get_info(opmonlib::InfoCollector& ci, int /*level*/)
   moduleleveltriggerinfo::Info i;
 
   i.tc_received_count = m_tc_received_count.load();
+
   i.td_sent_count = m_td_sent_count.load();
   i.td_inhibited_count = m_td_inhibited_count.load();
   i.td_paused_count = m_td_paused_count.load();
   i.td_total_count = m_td_total_count.load();
+
+  i.lc_kLive = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
+  m_lc_kPaused = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+  m_lc_kDead = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
 
   ci.add(i);
 }
@@ -100,6 +106,8 @@ ModuleLevelTrigger::do_start(const nlohmann::json& startobj)
   m_running_flag.store(true);
   m_dfo_is_busy.store(false);
 
+  m_livetime_counter.reset(new LivetimeCounter(LivetimeCounter::State::kPaused));
+
   networkmanager::NetworkManager::get().register_callback(
     m_inhibit_connection, std::bind(&ModuleLevelTrigger::dfo_busy_callback, this, std::placeholders::_1));
 
@@ -113,6 +121,10 @@ ModuleLevelTrigger::do_stop(const nlohmann::json& /*stopobj*/)
 {
   m_running_flag.store(false);
   m_send_trigger_decisions_thread.join();
+  
+  m_lc_deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead) + m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+  TLOG(3) << "LivetimeCounter - total deadtime+paused: " << m_lc_deadtime << std::endl;
+  m_livetime_counter.reset(); // Calls LivetimeCounter dtor?
 
   networkmanager::NetworkManager::get().clear_callback(m_inhibit_connection);
   ers::info(TriggerEndOfRun(ERS_HERE, m_run_number));
@@ -122,6 +134,7 @@ void
 ModuleLevelTrigger::do_pause(const nlohmann::json& /*pauseobj*/)
 {
   m_paused.store(true);
+  m_livetime_counter->set_state(LivetimeCounter::State::kPaused);
   TLOG() << "******* Triggers PAUSED! *********";
   ers::info(TriggerPaused(ERS_HERE));
 }
@@ -131,6 +144,7 @@ ModuleLevelTrigger::do_resume(const nlohmann::json& /*resumeobj*/)
 {
   ers::info(TriggerActive(ERS_HERE));
   TLOG() << "******* Triggers RESUMED! *********";
+  m_livetime_counter->set_state(LivetimeCounter::State::kLive);
   m_paused.store(false);
 }
 
@@ -189,6 +203,9 @@ ModuleLevelTrigger::send_trigger_decisions()
   m_td_inhibited_count.store(0);
   m_td_paused_count.store(0);
   m_td_total_count.store(0);
+  m_lc_kLive.store(0);
+  m_lc_kPaused.store(0);
+  m_lc_kDead.store(0);
 
   while (true) {
     triggeralgs::TriggerCandidate tc;
@@ -244,6 +261,15 @@ ModuleLevelTrigger::send_trigger_decisions()
          << "Received " << m_tc_received_count << " TCs. Sent " << m_td_sent_count.load() << " TDs. "
          << m_td_paused_count << " TDs were created during pause, and " << m_td_inhibited_count.load()
          << " TDs were inhibited.";
+
+  m_lc_kLive_count = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
+  m_lc_kPaused_count = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+  m_lc_kDead_count = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
+  m_lc_kLive = m_lc_kLive_count;
+  m_lc_kPaused = m_lc_kPaused_count;
+  m_lc_kDead = m_lc_kDead_count; 
+
+  m_lc_deadtime = m_livetime_counter->get_time(LivetimeCounter::State::kDead) + m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
 }
 
 void
@@ -254,6 +280,7 @@ ModuleLevelTrigger::dfo_busy_callback(ipm::Receiver::Response message)
 
   if (inhibit.run_number == m_run_number) {
     m_dfo_is_busy = inhibit.busy;
+    m_livetime_counter->set_state(LivetimeCounter::State::kDead);
   }
 }
 
