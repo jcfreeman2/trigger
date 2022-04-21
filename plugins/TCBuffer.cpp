@@ -8,6 +8,7 @@
 
 #include "TCBuffer.hpp"
 
+#include "dfmessages/DataRequest.hpp"
 #include "daqdataformats/GeoID.hpp"
 
 #include <string>
@@ -97,6 +98,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     try {
       triggeralgs::TriggerCandidate tc;
       m_input_queue_tcs->pop(tc);
+      TLOG_DEBUG(2) << "Got TC with start time " << tc.time_start;
       popped_anything = true;
       m_latency_buffer_impl->write(TCWrapper(tc));
       ++n_tcs_received;
@@ -107,6 +109,8 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     try {
       dfmessages::DataRequest data_request;
       m_input_queue_dr->pop(data_request);
+      auto& info = data_request.request_information;
+      TLOG_DEBUG(2) << "Got data request with component " << info.component << ", window_begin " << info.window_begin << ", window_end " << info.window_end;
       popped_anything = true;
       ++n_requests_received;
       m_request_handler_impl->issue_request(data_request, *m_output_queue_frag);
