@@ -74,8 +74,8 @@ ModuleLevelTrigger::get_info(opmonlib::InfoCollector& ci, int /*level*/)
 
   if (m_livetime_counter.get() != nullptr) {
     i.lc_kLive = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
-    m_lc_kPaused = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
-    m_lc_kDead = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
+    i.lc_kPaused = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
+    i.lc_kDead = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
   }
 
   ci.add(i);
