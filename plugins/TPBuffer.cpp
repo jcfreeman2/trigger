@@ -111,7 +111,7 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
       m_input_queue_dr->pop(data_request);
       popped_anything = true;
       ++n_requests_received;
-      m_request_handler_impl->issue_request(data_request, *m_output_queue_frag);
+      m_request_handler_impl->issue_request(data_request, *m_output_queue_frag, false);
     } catch (const appfwk::QueueTimeoutExpired&) {
       // It's fine if there was no new input
     }

@@ -113,7 +113,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
       TLOG_DEBUG(2) << "Got data request with component " << info.component << ", window_begin " << info.window_begin << ", window_end " << info.window_end;
       popped_anything = true;
       ++n_requests_received;
-      m_request_handler_impl->issue_request(data_request, *m_output_queue_frag);
+      m_request_handler_impl->issue_request(data_request, *m_output_queue_frag, false);
     } catch (const appfwk::QueueTimeoutExpired&) {
       // It's fine if there was no new input
     }
