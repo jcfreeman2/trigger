@@ -96,6 +96,9 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
     try {
       m_input_queue->pop(tpset, m_queue_timeout);
       m_tpset_received_count++;
+      if (m_geoid.region_id == daqdataformats::GeoID::s_invalid_region_id) {
+        m_geoid = tpset.origin;
+      }
     } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
@@ -176,6 +179,7 @@ FakeTPCreatorHeartbeatMaker::get_heartbeat(TPSet& tpset_heartbeat,
   tpset_heartbeat.start_time = current_tpset_start_time;
   tpset_heartbeat.end_time = current_tpset_start_time;
   tpset_heartbeat.run_number = m_run_number;
+  tpset_heartbeat.origin = m_geoid;
 }
 
 } // namespace trigger
