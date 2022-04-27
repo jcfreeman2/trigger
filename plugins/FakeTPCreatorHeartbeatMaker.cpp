@@ -91,6 +91,8 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
 
   daqdataformats::timestamp_t last_sent_heartbeat_time;
 
+  TPSet::seqno_t sequence_number = 0;
+  
   while (true) {
     TPSet tpset;
     try {
@@ -122,6 +124,8 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
     if (send_heartbeat) {
       TPSet tpset_heartbeat;
       get_heartbeat(tpset_heartbeat, current_tpset_start_time);
+      tpset_heartbeat.seqno = sequence_number;
+      ++sequence_number;
       while (!successfully_sent_heartbeat) {
         try {
           m_output_queue->push(tpset_heartbeat, m_queue_timeout);
@@ -137,6 +141,10 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
         }
       }
     }
+    
+    tpset.seqno = sequence_number;
+    ++sequence_number;
+
     while (!successfully_sent_real_tpset) {
       try {
         m_output_queue->push(tpset, m_queue_timeout);
