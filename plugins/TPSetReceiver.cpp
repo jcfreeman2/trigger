@@ -7,15 +7,15 @@
  */
 
 #include "TPSetReceiver.hpp"
-
-#include "appfwk/DAQModuleHelper.hpp"
-#include "appfwk/app/Nljs.hpp"
-#include "logging/Logging.hpp"
-#include "networkmanager/NetworkManager.hpp"
 #include "trigger/Issues.hpp"
 #include "trigger/tpsetreceiver/Nljs.hpp"
 #include "trigger/tpsetreceiver/Structs.hpp"
 #include "trigger/tpsetreceiverinfo/InfoNljs.hpp"
+
+#include "appfwk/DAQModuleHelper.hpp"
+#include "appfwk/app/Nljs.hpp"
+#include "iomanager/IOManager.hpp"
+#include "logging/Logging.hpp"
 
 #include <chrono>
 #include <cstdlib>
@@ -114,9 +114,9 @@ TPSetReceiver::do_start(const data_t&)
   m_received_tpsets = 0;
 
   // Subscribe here so that we know publishers have been started.
-  networkmanager::NetworkManager::get().subscribe(m_topic);
-  networkmanager::NetworkManager::get().register_callback(
-    m_topic, std::bind(&TPSetReceiver::dispatch_tpset, this, std::placeholders::_1));
+  iomanager::IOManager iom;
+  iom.get_receiver<trigger::TPSet>(m_topic).add_callback(
+    std::bind(&TPSetReceiver::dispatch_tpset, this, std::placeholders::_1));
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Exiting do_start() method";
 }
@@ -126,8 +126,8 @@ TPSetReceiver::do_stop(const data_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Entering do_stop() method";
 
-  networkmanager::NetworkManager::get().clear_callback(m_topic);
-  networkmanager::NetworkManager::get().unsubscribe(m_topic);
+  iomanager::IOManager iom;
+  iom.remove_callback<trigger::TPSet>(m_topic);
 
   TLOG() << get_name() << " successfully stopped";
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Exiting do_stop() method";
@@ -151,9 +151,8 @@ TPSetReceiver::get_info(opmonlib::InfoCollector& ci, int /*level*/)
 }
 
 void
-TPSetReceiver::dispatch_tpset(ipm::Receiver::Response message)
+TPSetReceiver::dispatch_tpset(trigger::TPSet& tpset)
 {
-  auto tpset = serialization::deserialize<trigger::TPSet>(message.data);
   TLOG_DEBUG(10) << get_name() << "Received tpset: " << tpset.seqno << ", ts=" << tpset.start_time << "-"
                  << tpset.end_time;
 

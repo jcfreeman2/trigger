@@ -12,8 +12,8 @@
 #include "trigger/TPSet.hpp"
 
 #include "appfwk/DAQModule.hpp"
-#include "appfwk/DAQSink.hpp"
-#include "ipm/Receiver.hpp"
+#include "iomanager/Receiver.hpp"
+#include "iomanager/Sender.hpp"
 
 #include <map>
 #include <memory>
@@ -51,14 +51,14 @@ private:
 
   void get_info(opmonlib::InfoCollector& ci, int level) override;
 
-  void dispatch_tpset(ipm::Receiver::Response message);
+  void dispatch_tpset(trigger::TPSet);
 
   // Configuration
   std::chrono::milliseconds m_queue_timeout;
   std::string m_topic;
 
   // Queue(s)
-  using tpsetsink_t = dunedaq::appfwk::DAQSink<trigger::TPSet>;
+  using tpsetsink_t = dunedaq::iomanager::SenderConcept<trigger::TPSet>;
   std::map<daqdataformats::GeoID, std::unique_ptr<tpsetsink_t>> m_tpset_output_queues;
 
   std::atomic<uint64_t> m_received_tpsets{ 0 }; // NOLINT (build/unsigned)
