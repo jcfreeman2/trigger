@@ -9,7 +9,7 @@
 #include "trigger/TokenManager.hpp"
 #include "trigger/LivetimeCounter.hpp"
 
-#include "networkmanager/NetworkManager.hpp"
+#include "iomanager/IOManager.hpp"
 
 #include <memory>
 #include <string>
@@ -20,8 +20,8 @@ TokenManager::TokenManager(const std::string& connection_name,
                            int initial_tokens,
                            daqdataformats::run_number_t run_number,
                            std::shared_ptr<LivetimeCounter> livetime_counter)
-  : m_n_tokens(initial_tokens)
-  , m_connection_name(connection_name)
+  : m_connection_name(connection_name)
+  , m_n_tokens(initial_tokens)
   , m_run_number(run_number)
   , m_livetime_counter(livetime_counter)
 
@@ -29,18 +29,15 @@ TokenManager::TokenManager(const std::string& connection_name,
 
   m_open_trigger_time = std::chrono::steady_clock::now();
 
-  networkmanager::NetworkManager::get().start_listening(m_connection_name);
-
-  networkmanager::NetworkManager::get().register_callback(
-    m_connection_name, std::bind(&TokenManager::receive_token, this, std::placeholders::_1));
+  iomanager::IOManager iom;
+  iom.get_receiver<dfmessages::TriggerDecisionToken>(m_connection_name)
+    ->add_callback(std::bind(&TokenManager::receive_token, this, std::placeholders::_1));
 }
 
 TokenManager::~TokenManager()
 {
-
-  networkmanager::NetworkManager::get().clear_callback(m_connection_name);
-
-  networkmanager::NetworkManager::get().stop_listening(m_connection_name);
+  iomanager::IOManager iom;
+  iom.get_receiver<dfmessages::TriggerDecisionToken>(m_connection_name)->remove_callback();
 
   if (!m_open_trigger_decisions.empty()) {
 
@@ -83,11 +80,8 @@ TokenManager::trigger_sent(dfmessages::trigger_number_t trigger_number)
 }
 
 void
-TokenManager::receive_token(ipm::Receiver::Response message)
+TokenManager::receive_token(dfmessages::TriggerDecisionToken& token)
 {
-
-  auto token = serialization::deserialize<dfmessages::TriggerDecisionToken>(message.data);
-
   TLOG_DEBUG(1) << "Received token with run number " << token.run_number << ", current run number " << m_run_number;
   if (token.run_number == m_run_number) {
     if(m_n_tokens.load()==0){

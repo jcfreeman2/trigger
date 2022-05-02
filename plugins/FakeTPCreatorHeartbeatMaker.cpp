@@ -99,7 +99,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
     try {
       tpset = m_input_queue->receive(m_queue_timeout);
       m_tpset_received_count++;
-    } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
       if (!running_flag.load()) {
@@ -129,11 +129,11 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
           m_heartbeats_sent++;
           last_sent_heartbeat_time = current_tpset_start_time;
           is_first_tpset_received = false;
-        } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+        } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
           std::ostringstream oss_warn;
           oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
           ers::warning(
-            dunedaq::appfwk::QueueTimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
+            dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
         }
       }
     }
@@ -142,11 +142,10 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
         m_output_queue->send(tpset, m_queue_timeout);
         successfully_sent_real_tpset = true;
         m_tpset_sent_count++;
-      } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+      } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
         std::ostringstream oss_warn;
         oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
-        ers::warning(
-          dunedaq::appfwk::QueueTimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
+        ers::warning(dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
       }
     }
   }

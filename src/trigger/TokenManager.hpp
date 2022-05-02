@@ -14,7 +14,6 @@
 #include "dfmessages/TimeSync.hpp"
 #include "dfmessages/TriggerDecisionToken.hpp"
 #include "dfmessages/Types.hpp"
-#include "ipm/Receiver.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -74,7 +73,9 @@ public:
 
 private:
   // The main thread
-  void receive_token(ipm::Receiver::Response message);
+  void receive_token(dfmessages::TriggerDecisionToken& token);
+
+  std::string m_connection_name;
 
   // Are we running?
   std::atomic<bool> m_running_flag;
@@ -85,10 +86,8 @@ private:
   std::set<dfmessages::trigger_number_t> m_open_trigger_decisions;
   std::mutex m_open_trigger_decisions_mutex;
 
-  std::shared_ptr<LivetimeCounter> m_livetime_counter;
-
-  std::string m_connection_name;
   daqdataformats::run_number_t m_run_number;
+  std::shared_ptr<LivetimeCounter> m_livetime_counter;
 
   // open strigger report time
   std::chrono::time_point<std::chrono::steady_clock> m_open_trigger_time;
