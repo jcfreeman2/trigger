@@ -9,15 +9,12 @@
 #ifndef TRIGGER_SRC_TRIGGER_TOKENMANAGER_HPP_
 #define TRIGGER_SRC_TRIGGER_TOKENMANAGER_HPP_
 
-#include "appfwk/DAQSource.hpp"
+#include "LivetimeCounter.hpp"
 
 #include "dfmessages/TimeSync.hpp"
 #include "dfmessages/TriggerDecisionToken.hpp"
 #include "dfmessages/Types.hpp"
-
 #include "ipm/Receiver.hpp"
-
-#include "LivetimeCounter.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -43,7 +40,10 @@ namespace trigger {
 class TokenManager
 {
 public:
-  TokenManager(const std::string& connection_name, int initial_tokens, daqdataformats::run_number_t run_number, std::shared_ptr<LivetimeCounter> livetime_counter);
+  TokenManager(const std::string& connection_name,
+               int initial_tokens,
+               daqdataformats::run_number_t run_number,
+               std::shared_ptr<LivetimeCounter> livetime_counter);
 
   virtual ~TokenManager();
 

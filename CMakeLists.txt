@@ -14,7 +14,7 @@ find_package(triggeralgs REQUIRED)
 find_package(dfmessages REQUIRED)
 find_package(timinglibs REQUIRED)
 find_package(utilities REQUIRED)
-find_package(networkmanager REQUIRED)
+find_package(iomanager REQUIRED)
 find_package(daqdataformats REQUIRED)
 find_package(detdataformats REQUIRED)
 find_package(detchannelmaps REQUIRED)
@@ -31,6 +31,7 @@ daq_add_library(TokenManager.cpp LivetimeCounter.cpp
   dfmessages::dfmessages
   triggeralgs::triggeralgs
   utilities::utilities
+  iomanager::iomanager
   detdataformats::detdataformats
   detchannelmaps::detchannelmaps)
 
@@ -55,7 +56,6 @@ daq_codegen(
   triggerdecisionmaker.jsonnet
   triggerzipper.jsonnet
   tpsetbuffercreator.jsonnet
-  tpsetreceiver.jsonnet
   tpchannelfilter.jsonnet
   TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
 
@@ -95,8 +95,6 @@ daq_add_plugin(TriggerActivityMakerSupernovaPlugin duneTAMaker LINK_LIBRARIES tr
 daq_add_plugin(TriggerCandidateMakerSupernovaPlugin duneTCMaker LINK_LIBRARIES trigger)
 daq_add_plugin(TriggerDecisionMakerSupernovaPlugin duneTDMaker LINK_LIBRARIES trigger)
 
-daq_add_plugin(TPSetReceiver duneDAQModule LINK_LIBRARIES trigger)
-
 ##############################################################################
 # Integration tests
 
@@ -109,11 +107,11 @@ daq_add_application( streamed_TPs_to_text streamed_TPs_to_text.cxx TEST LINK_LIB
 ##############################################################################
 # Unit Tests
 
-daq_add_unit_test(TokenManager_test              LINK_LIBRARIES trigger)
-daq_add_unit_test(TxSet_test                     LINK_LIBRARIES trigger)
-daq_add_unit_test(BufferManager_test             LINK_LIBRARIES trigger)
-daq_add_unit_test(TriggerZipper_test             LINK_LIBRARIES trigger)
-daq_add_unit_test(TriggerObjectOverlay_test      LINK_LIBRARIES trigger)
+#daq_add_unit_test(TokenManager_test              LINK_LIBRARIES trigger)
+#daq_add_unit_test(TxSet_test                     LINK_LIBRARIES trigger)
+#daq_add_unit_test(BufferManager_test             LINK_LIBRARIES trigger)
+#daq_add_unit_test(TriggerZipper_test             LINK_LIBRARIES trigger)
+#daq_add_unit_test(TriggerObjectOverlay_test      LINK_LIBRARIES trigger)
 
 ##############################################################################
 

@@ -8,6 +8,8 @@
 
 #include "FakeTPCreatorHeartbeatMaker.hpp"
 
+#include "appfwk/DAQModuleHelper.hpp"
+#include "iomanager/IOManager.hpp"
 #include "rcif/cmd/Nljs.hpp"
 
 #include <string>
@@ -31,9 +33,10 @@ FakeTPCreatorHeartbeatMaker::FakeTPCreatorHeartbeatMaker(const std::string& name
 void
 FakeTPCreatorHeartbeatMaker::init(const nlohmann::json& iniobj)
 {
+  iomanager::IOManager iom;
   try {
-    m_input_queue.reset(new source_t(appfwk::queue_inst(iniobj, "tpset_source")));
-    m_output_queue.reset(new sink_t(appfwk::queue_inst(iniobj, "tpset_sink")));
+    m_input_queue = iom.get_receiver<trigger::TPSet>(appfwk::connection_inst(iniobj, "tpset_source"));
+    m_output_queue = iom.get_sender<trigger::TPSet>(appfwk::connection_inst(iniobj, "tpset_sink"));
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
   }
@@ -63,7 +66,7 @@ FakeTPCreatorHeartbeatMaker::do_start(const nlohmann::json& args)
 {
   rcif::cmd::StartParams start_params = args.get<rcif::cmd::StartParams>();
   m_run_number = start_params.run;
-  
+
   m_thread.start_working_thread("heartbeater");
   TLOG_DEBUG(2) << get_name() + " successfully started.";
 }
@@ -94,7 +97,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
   while (true) {
     TPSet tpset;
     try {
-      m_input_queue->pop(tpset, m_queue_timeout);
+      tpset = m_input_queue->receive(m_queue_timeout);
       m_tpset_received_count++;
     } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
       // The condition to exit the loop is that we've been stopped and
@@ -121,7 +124,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
       get_heartbeat(tpset_heartbeat, current_tpset_start_time);
       while (!successfully_sent_heartbeat) {
         try {
-          m_output_queue->push(tpset_heartbeat, m_queue_timeout);
+          m_output_queue->send(tpset_heartbeat, m_queue_timeout);
           successfully_sent_heartbeat = true;
           m_heartbeats_sent++;
           last_sent_heartbeat_time = current_tpset_start_time;
@@ -136,7 +139,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
     }
     while (!successfully_sent_real_tpset) {
       try {
-        m_output_queue->push(tpset, m_queue_timeout);
+        m_output_queue->send(tpset, m_queue_timeout);
         successfully_sent_real_tpset = true;
         m_tpset_sent_count++;
       } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
