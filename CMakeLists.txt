@@ -42,11 +42,7 @@ daq_add_library(TokenManager.cpp LivetimeCounter.cpp
 ## us all changing it.  Please keep one file per line to give git
 ## merge a chance to succeed.
 daq_codegen(
-  fakedataflow.jsonnet
-  faketimestampeddatagenerator.jsonnet
   faketpcreatorheartbeatmaker.jsonnet
-  intervaltccreator.jsonnet
-  intervaltriggercreator.jsonnet
   moduleleveltrigger.jsonnet
   randomtriggercandidatemaker.jsonnet
   timingtriggercandidatemaker.jsonnet
@@ -70,11 +66,7 @@ daq_add_plugin(TriggerCandidateMaker duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TriggerDecisionMaker duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(RandomTriggerCandidateMaker duneDAQModule LINK_LIBRARIES trigger timinglibs::timinglibs)
 daq_add_plugin(ModuleLevelTrigger duneDAQModule LINK_LIBRARIES trigger timinglibs::timinglibs)
-daq_add_plugin(IntervalTriggerCreator duneDAQModule LINK_LIBRARIES trigger timinglibs::timinglibs TEST)
-daq_add_plugin(IntervalTCCreator duneDAQModule LINK_LIBRARIES trigger timinglibs::timinglibs TEST)
 daq_add_plugin(TPSetSink duneDAQModule LINK_LIBRARIES trigger TEST)
-daq_add_plugin(FakeTimeStampedDataGenerator duneDAQModule LINK_LIBRARIES trigger TEST)
-daq_add_plugin(FakeDataFlow duneDAQModule LINK_LIBRARIES trigger TEST)
 daq_add_plugin(FakeTPCreatorHeartbeatMaker duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TPSetBufferCreator duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TPChannelFilter duneDAQModule LINK_LIBRARIES trigger)
