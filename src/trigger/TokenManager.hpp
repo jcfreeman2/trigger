@@ -14,6 +14,7 @@
 #include "dfmessages/TimeSync.hpp"
 #include "dfmessages/TriggerDecisionToken.hpp"
 #include "dfmessages/Types.hpp"
+#include "iomanager/Receiver.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -91,6 +92,9 @@ private:
 
   // open strigger report time
   std::chrono::time_point<std::chrono::steady_clock> m_open_trigger_time;
+
+  // the IOManager receiver instance
+  std::shared_ptr<iomanager::ReceiverConcept<dfmessages::TriggerDecisionToken>> m_token_receiver;
 };
 
 } // namespace trigger

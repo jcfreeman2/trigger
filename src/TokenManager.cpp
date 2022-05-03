@@ -24,20 +24,18 @@ TokenManager::TokenManager(const std::string& connection_name,
   , m_n_tokens(initial_tokens)
   , m_run_number(run_number)
   , m_livetime_counter(livetime_counter)
-
+  , m_token_receiver(nullptr)
 {
-
   m_open_trigger_time = std::chrono::steady_clock::now();
 
   iomanager::IOManager iom;
-  iom.get_receiver<dfmessages::TriggerDecisionToken>(m_connection_name)
-    ->add_callback(std::bind(&TokenManager::receive_token, this, std::placeholders::_1));
+  m_token_receiver = iom.get_receiver<dfmessages::TriggerDecisionToken>(m_connection_name);
+  m_token_receiver->add_callback(std::bind(&TokenManager::receive_token, this, std::placeholders::_1));
 }
 
 TokenManager::~TokenManager()
 {
-  iomanager::IOManager iom;
-  iom.get_receiver<dfmessages::TriggerDecisionToken>(m_connection_name)->remove_callback();
+  m_token_receiver->remove_callback();
 
   if (!m_open_trigger_decisions.empty()) {
 
@@ -74,7 +72,7 @@ TokenManager::trigger_sent(dfmessages::trigger_number_t trigger_number)
   std::lock_guard<std::mutex> lk(m_open_trigger_decisions_mutex);
   m_open_trigger_decisions.insert(trigger_number);
   m_n_tokens--;
-  if(m_n_tokens.load()==0) {
+  if (m_n_tokens.load() == 0) {
     m_livetime_counter->set_state(LivetimeCounter::State::kDead);
   }
 }
@@ -84,7 +82,7 @@ TokenManager::receive_token(dfmessages::TriggerDecisionToken& token)
 {
   TLOG_DEBUG(1) << "Received token with run number " << token.run_number << ", current run number " << m_run_number;
   if (token.run_number == m_run_number) {
-    if(m_n_tokens.load()==0){
+    if (m_n_tokens.load() == 0) {
       m_livetime_counter->set_state(LivetimeCounter::State::kLive);
     }
     m_n_tokens++;
