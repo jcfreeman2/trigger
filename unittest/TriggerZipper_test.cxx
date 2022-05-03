@@ -9,7 +9,7 @@
 // use TP as representative specialization
 #include "../plugins/TPZipper.hpp" // NOLINT
 
-#include "appfwk/QueueRegistry.hpp"
+#include "iomanager/IOManager.hpp"
 
 /**
  * @brief Name of this test module

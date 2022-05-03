@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(Basics)
   iom.get_sender<dfmessages::TriggerDecisionToken>("foo")->send(token, std::chrono::milliseconds(10));
 
   // Give TokenManager a little time to pop the token off the queue
-  std::this_thread::sleep_for(3000ms);
+  std::this_thread::sleep_for(100ms);
   BOOST_CHECK_EQUAL(tm.get_n_tokens(), 1);
   BOOST_CHECK_EQUAL(tm.triggers_allowed(), true);
 }
