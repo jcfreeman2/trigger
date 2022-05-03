@@ -107,8 +107,8 @@ ModuleLevelTrigger::do_start(const nlohmann::json& startobj)
   m_livetime_counter.reset(new LivetimeCounter(LivetimeCounter::State::kPaused));
 
   iomanager::IOManager iom;
-  iom.get_receiver<dfmessages::TriggerInhibit>(m_inhibit_connection)
-    ->add_callback(std::bind(&ModuleLevelTrigger::dfo_busy_callback, this, std::placeholders::_1));
+  m_inhibit_receiver = iom.get_receiver<dfmessages::TriggerInhibit>(m_inhibit_connection);
+  m_inhibit_receiver->add_callback(std::bind(&ModuleLevelTrigger::dfo_busy_callback, this, std::placeholders::_1));
 
   m_send_trigger_decisions_thread = std::thread(&ModuleLevelTrigger::send_trigger_decisions, this);
   pthread_setname_np(m_send_trigger_decisions_thread.native_handle(), "mlt-trig-dec");
@@ -126,8 +126,7 @@ ModuleLevelTrigger::do_stop(const nlohmann::json& /*stopobj*/)
   TLOG(3) << "LivetimeCounter - total deadtime+paused: " << m_lc_deadtime << std::endl;
   m_livetime_counter.reset(); // Calls LivetimeCounter dtor?
 
-  iomanager::IOManager iom;
-  iom.get_receiver<dfmessages::TriggerInhibit>(m_inhibit_connection)->remove_callback();
+  m_inhibit_receiver->remove_callback();
   ers::info(TriggerEndOfRun(ERS_HERE, m_run_number));
 }
 
@@ -208,6 +207,9 @@ ModuleLevelTrigger::send_trigger_decisions()
   m_lc_kPaused.store(0);
   m_lc_kDead.store(0);
 
+  iomanager::IOManager iom;
+  std::shared_ptr<iomanager::SenderConcept<dfmessages::TriggerDecision>> td_sender = iom.get_sender<dfmessages::TriggerDecision>(m_trigger_decision_connection);
+
   while (true) {
     triggeralgs::TriggerCandidate tc;
     try {
@@ -232,8 +234,7 @@ ModuleLevelTrigger::send_trigger_decisions()
                     << " based on TC of type " << static_cast<std::underlying_type_t<decltype(tc.type)>>(tc.type);
 
       try {
-        iomanager::IOManager iom;
-        iom.get_sender<dfmessages::TriggerDecision>(m_trigger_decision_connection)->send(decision, std::chrono::milliseconds(1));
+        td_sender->send(decision, std::chrono::milliseconds(1));
         m_td_sent_count++;
         m_last_trigger_number++;
       } catch (const ers::Issue& e) {

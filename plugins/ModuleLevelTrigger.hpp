@@ -80,6 +80,7 @@ private:
 
   // Queue sources and sinks
   std::shared_ptr<iomanager::ReceiverConcept<triggeralgs::TriggerCandidate>> m_candidate_source;
+  std::shared_ptr<iomanager::ReceiverConcept<dfmessages::TriggerInhibit>> m_inhibit_receiver;
 
   std::vector<dfmessages::GeoID> m_links;
 
