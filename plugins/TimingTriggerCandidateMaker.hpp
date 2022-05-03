@@ -15,6 +15,7 @@
 
 #include "appfwk/DAQModule.hpp"
 #include "dfmessages/HSIEvent.hpp"
+#include "iomanager/Receiver.hpp"
 #include "iomanager/Sender.hpp"
 #include "triggeralgs/TriggerActivity.hpp"
 #include "triggeralgs/TriggerCandidate.hpp"
@@ -59,6 +60,7 @@ private:
 
   using sink_t = dunedaq::iomanager::SenderConcept<triggeralgs::TriggerCandidate>;
   std::shared_ptr<sink_t> m_output_queue;
+  std::shared_ptr<iomanager::ReceiverConcept<dfmessages::HSIEvent>> m_hsievent_receiver;
 
   std::chrono::milliseconds m_queue_timeout;
 

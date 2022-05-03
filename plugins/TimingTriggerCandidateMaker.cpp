@@ -97,8 +97,8 @@ TimingTriggerCandidateMaker::do_start(const nlohmann::json&)
   m_tc_total_count.store(0);
 
   iomanager::IOManager iom;
-  iom.get_receiver<dfmessages::HSIEvent>(m_hsievent_receive_connection)
-    ->add_callback(std::bind(&TimingTriggerCandidateMaker::receive_hsievent, this, std::placeholders::_1));
+  m_hsievent_receiver = iom.get_receiver<dfmessages::HSIEvent>(m_hsievent_receive_connection);
+  m_hsievent_receiver->add_callback(std::bind(&TimingTriggerCandidateMaker::receive_hsievent, this, std::placeholders::_1));
   
   TLOG_DEBUG(2) << get_name() + " successfully started.";
 }
@@ -106,8 +106,7 @@ TimingTriggerCandidateMaker::do_start(const nlohmann::json&)
 void
 TimingTriggerCandidateMaker::do_stop(const nlohmann::json&)
 {
-  iomanager::IOManager iom;
-  iom.get_receiver<dfmessages::HSIEvent>(m_hsievent_receive_connection)->remove_callback();
+  m_hsievent_receiver->remove_callback();
 
   TLOG() << "Received " << m_tsd_received_count << " HSIEvent messages. Successfully sent " << m_tc_sent_count
          << " TriggerCandidates";
