@@ -91,11 +91,16 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
 
   daqdataformats::timestamp_t last_sent_heartbeat_time;
 
+  TPSet::seqno_t sequence_number = 0;
+  
   while (true) {
     TPSet tpset;
     try {
       m_input_queue->pop(tpset, m_queue_timeout);
       m_tpset_received_count++;
+      if (m_geoid.region_id == daqdataformats::GeoID::s_invalid_region_id) {
+        m_geoid = tpset.origin;
+      }
     } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
@@ -119,6 +124,8 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
     if (send_heartbeat) {
       TPSet tpset_heartbeat;
       get_heartbeat(tpset_heartbeat, current_tpset_start_time);
+      tpset_heartbeat.seqno = sequence_number;
+      ++sequence_number;
       while (!successfully_sent_heartbeat) {
         try {
           m_output_queue->push(tpset_heartbeat, m_queue_timeout);
@@ -134,6 +141,10 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
         }
       }
     }
+    
+    tpset.seqno = sequence_number;
+    ++sequence_number;
+
     while (!successfully_sent_real_tpset) {
       try {
         m_output_queue->push(tpset, m_queue_timeout);
@@ -176,6 +187,7 @@ FakeTPCreatorHeartbeatMaker::get_heartbeat(TPSet& tpset_heartbeat,
   tpset_heartbeat.start_time = current_tpset_start_time;
   tpset_heartbeat.end_time = current_tpset_start_time;
   tpset_heartbeat.run_number = m_run_number;
+  tpset_heartbeat.origin = m_geoid;
 }
 
 } // namespace trigger

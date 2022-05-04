@@ -66,7 +66,11 @@ private:
   triggeralgs::timestamp_t m_heartbeat_interval;
 
   daqdataformats::run_number_t m_run_number{ daqdataformats::TypeDefaults::s_invalid_run_number };
-  
+
+  daqdataformats::GeoID m_geoid{
+    daqdataformats::GeoID::SystemType::kDataSelection,
+    daqdataformats::GeoID::s_invalid_region_id,
+    daqdataformats::GeoID::s_invalid_element_id };
   // Opmon variables
   using metric_counter_type = decltype(faketpcreatorheartbeatmakerinfo::Info::tpset_received_count);
   std::atomic<metric_counter_type> m_tpset_received_count{ 0 };
