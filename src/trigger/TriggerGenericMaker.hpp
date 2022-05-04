@@ -170,10 +170,10 @@ private:
     return true;
   }
 
-  bool send(OUT& out)
+  bool send(OUT&& out)
   {
     try {
-      m_output_queue->send(out, m_queue_timeout);
+      m_output_queue->send(std::move(out), m_queue_timeout);
     } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
       ers::warning(excpt);
       return false;
@@ -217,7 +217,7 @@ public:
     }
 
     while (out_vec.size()) {
-      if (!m_parent.send(out_vec.back())) {
+      if (!m_parent.send(std::move(out_vec.back()))) {
         ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
         // out_vec.back() is dropped
       }
@@ -314,7 +314,7 @@ public: // NOLINT
         heartbeat.end_time = in.end_time;
         heartbeat.origin = daqdataformats::GeoID(
           daqdataformats::GeoID::SystemType::kDataSelection, m_parent.m_geoid_region_id, m_parent.m_geoid_element_id);
-        if (!m_parent.send(heartbeat)) {
+        if (!m_parent.send(std::move(heartbeat))) {
           ers::error(AlgorithmFailedToHeartbeat(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // heartbeat is dropped
         }
@@ -352,7 +352,7 @@ public: // NOLINT
           daqdataformats::GeoID::SystemType::kDataSelection, m_parent.m_geoid_region_id, m_parent.m_geoid_element_id);
         TLOG_DEBUG(2) << "Output set window ready with start time " << out.start_time << " end time " << out.end_time
                       << " and " << out.objects.size() << " members";
-        if (!m_parent.send(out)) {
+        if (!m_parent.send(std::move(out))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out is dropped
         }
@@ -386,7 +386,7 @@ public: // NOLINT
           daqdataformats::GeoID::SystemType::kDataSelection, m_parent.m_geoid_region_id, m_parent.m_geoid_element_id);
         TLOG_DEBUG(2) << "Output set window drained with start time " << out.start_time << " end time " << out.end_time
                       << " and " << out.objects.size() << " members";
-        if (!m_parent.send(out)) {
+        if (!m_parent.send(std::move(out))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out is dropped
         }
@@ -471,7 +471,7 @@ public: // NOLINT
     }
 
     while (out_vec.size()) {
-      if (!m_parent.send(out_vec.back())) {
+      if (!m_parent.send(std::move(out_vec.back()))) {
         ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
         // out.back() is dropped
       }
@@ -489,7 +489,7 @@ public: // NOLINT
       std::vector<OUT> out_vec;
       process_slice(time_slice, out_vec);
       while (out_vec.size()) {
-        if (!m_parent.send(out_vec.back())) {
+        if (!m_parent.send(std::move(out_vec.back()))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out.back() is dropped
         }

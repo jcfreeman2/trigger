@@ -167,7 +167,7 @@ RandomTriggerCandidateMaker::send_trigger_candidates()
 
     TLOG_DEBUG(1) << get_name() << " at timestamp " << m_timestamp_estimator->get_timestamp_estimate()
                   << ", pushing a candidate with timestamp " << candidate.time_candidate;
-    m_trigger_candidate_sink->send(candidate, std::chrono::milliseconds(10));
+    m_trigger_candidate_sink->send(std::move(candidate), std::chrono::milliseconds(10));
     m_tc_sent_count++;
 
     next_trigger_timestamp += get_interval(gen);

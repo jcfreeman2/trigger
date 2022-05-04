@@ -190,7 +190,7 @@ TPSetBufferCreator::send_out_fragment(std::unique_ptr<daqdataformats::Fragment> 
     TLOG_DEBUG(2) << get_name() << ": Pushing the requested TPSet onto queue " << thisQueueName;
     try {
       auto the_pair = std::make_pair(std::move(frag_out), data_destination);
-      m_output_queue_frag->send(the_pair, m_queueTimeout);
+      m_output_queue_frag->send(std::move(the_pair), m_queueTimeout);
       successfullyWasSent = true;
       ++sentCount;
     } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
@@ -210,7 +210,7 @@ TPSetBufferCreator::send_out_fragment(std::unique_ptr<daqdataformats::Fragment> 
     TLOG_DEBUG(2) << get_name() << ": Pushing the requested TPSet onto queue " << thisQueueName;
     try {
       auto the_pair = std::make_pair(std::move(frag_out), data_destination);
-      m_output_queue_frag->send(the_pair, m_queueTimeout);
+      m_output_queue_frag->send(std::move(the_pair), m_queueTimeout);
       successfullyWasSent = true;
     } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
       std::ostringstream oss_warn;

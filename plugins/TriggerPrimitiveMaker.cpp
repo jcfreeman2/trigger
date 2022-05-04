@@ -256,7 +256,8 @@ TriggerPrimitiveMaker::do_work(std::atomic<bool>& running_flag,
       ++generated_count;
       generated_tp_count += tpset.objects.size();
       try {
-        tpset_sink->send(tpset, m_queue_timeout);
+          TPSet tpset_copy(tpset);
+        tpset_sink->send(std::move(tpset_copy), m_queue_timeout);
       } catch (const dunedaq::iomanager::TimeoutExpired& e) {
         ers::warning(e);
         ++push_failed_count;

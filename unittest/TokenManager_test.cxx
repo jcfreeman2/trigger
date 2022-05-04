@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(Basics)
   dfmessages::TriggerDecisionToken token;
   token.run_number = run_number;
   token.trigger_number = 1;
-  get_iom_sender<dfmessages::TriggerDecisionToken>("foo")->send(token, std::chrono::milliseconds(10));
+  get_iom_sender<dfmessages::TriggerDecisionToken>("foo")->send(std::move(token), std::chrono::milliseconds(10));
 
   // Give TokenManager a little time to pop the token off the queue
   std::this_thread::sleep_for(100ms);

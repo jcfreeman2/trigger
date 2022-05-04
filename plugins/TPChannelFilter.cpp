@@ -125,7 +125,7 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
     // The rule is that we don't send empty TPSets, so ensure that
     if (!tpset.objects.empty()) {
       try {
-        m_output_queue->send(tpset, m_queue_timeout);
+        m_output_queue->send(std::move(tpset), m_queue_timeout);
       } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
         std::ostringstream oss_warn;
         oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";

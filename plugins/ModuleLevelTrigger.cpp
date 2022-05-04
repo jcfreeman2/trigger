@@ -231,7 +231,7 @@ ModuleLevelTrigger::send_trigger_decisions()
                     << " based on TC of type " << static_cast<std::underlying_type_t<decltype(tc.type)>>(tc.type);
 
       try {
-        td_sender->send(decision, std::chrono::milliseconds(1));
+        td_sender->send(std::move(decision), std::chrono::milliseconds(1));
         m_td_sent_count++;
         m_last_trigger_number++;
       } catch (const ers::Issue& e) {

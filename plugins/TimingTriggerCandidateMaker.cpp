@@ -141,7 +141,8 @@ TimingTriggerCandidateMaker::receive_hsievent(dfmessages::HSIEvent& data)
   bool successfullyWasSent = false;
   while (!successfullyWasSent) {
     try {
-      m_output_queue->send(candidate, m_queue_timeout);
+        triggeralgs::TriggerCandidate candidate_copy(candidate);
+      m_output_queue->send(std::move(candidate_copy), m_queue_timeout);
       successfullyWasSent = true;
       ++m_tc_sent_count;
     } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {

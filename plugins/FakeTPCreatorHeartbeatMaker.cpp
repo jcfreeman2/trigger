@@ -123,7 +123,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
       get_heartbeat(tpset_heartbeat, current_tpset_start_time);
       while (!successfully_sent_heartbeat) {
         try {
-          m_output_queue->send(tpset_heartbeat, m_queue_timeout);
+          m_output_queue->send(std::move(tpset_heartbeat), m_queue_timeout);
           successfully_sent_heartbeat = true;
           m_heartbeats_sent++;
           last_sent_heartbeat_time = current_tpset_start_time;
@@ -138,7 +138,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
     }
     while (!successfully_sent_real_tpset) {
       try {
-        m_output_queue->send(tpset, m_queue_timeout);
+        m_output_queue->send(std::move(tpset), m_queue_timeout);
         successfully_sent_real_tpset = true;
         m_tpset_sent_count++;
       } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {

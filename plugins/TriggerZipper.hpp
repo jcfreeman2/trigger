@@ -234,7 +234,7 @@ public:
       ++m_next_seqno;
 
       try {
-        m_outq->send(tset, std::chrono::milliseconds(10));
+        m_outq->send(std::move(tset), std::chrono::milliseconds(10));
         ++m_n_sent;
       } catch (const iomanager::TimeoutExpired& err) {
         // our output queue is stuffed.  should more be done
