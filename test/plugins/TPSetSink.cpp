@@ -31,8 +31,7 @@ TPSetSink::TPSetSink(const std::string& name)
 void
 TPSetSink::init(const nlohmann::json& obj)
 {
-  iomanager::IOManager iom;
-  m_tpset_source = iom.get_receiver<TPSet>(appfwk::connection_inst(obj, "tpset_source"));
+  m_tpset_source = get_iom_receiver<TPSet>(appfwk::connection_inst(obj, "tpset_source"));
 }
 
 void

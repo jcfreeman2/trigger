@@ -61,10 +61,9 @@ TriggerPrimitiveMaker::do_configure(const nlohmann::json& obj)
   m_earliest_first_tpset_timestamp = std::numeric_limits<triggeralgs::timestamp_t>::max();
   m_latest_last_tpset_timestamp = 0;
 
-  iomanager::IOManager iom;
   for (auto& stream : m_conf.tp_streams) {
     TPStream this_stream;
-    this_stream.tpset_sink = iom.get_sender<TPSet>(appfwk::connection_inst(m_init_obj, stream.output_sink_name));
+    this_stream.tpset_sink = get_iom_sender<TPSet>(appfwk::connection_inst(m_init_obj, stream.output_sink_name));
 
     this_stream.tpsets = read_tpsets(stream.filename, stream.region_id, stream.element_id);
 

@@ -53,8 +53,7 @@ ModuleLevelTrigger::ModuleLevelTrigger(const std::string& name)
 void
 ModuleLevelTrigger::init(const nlohmann::json& iniobj)
 {
-  iomanager::IOManager iom;
-  m_candidate_source = iom.get_receiver<triggeralgs::TriggerCandidate>(appfwk::connection_inst(iniobj, "trigger_candidate_source"));
+  m_candidate_source = get_iom_receiver<triggeralgs::TriggerCandidate>(appfwk::connection_inst(iniobj, "trigger_candidate_source"));
 }
 
 void
@@ -106,8 +105,7 @@ ModuleLevelTrigger::do_start(const nlohmann::json& startobj)
 
   m_livetime_counter.reset(new LivetimeCounter(LivetimeCounter::State::kPaused));
 
-  iomanager::IOManager iom;
-  m_inhibit_receiver = iom.get_receiver<dfmessages::TriggerInhibit>(m_inhibit_connection);
+  m_inhibit_receiver = get_iom_receiver<dfmessages::TriggerInhibit>(m_inhibit_connection);
   m_inhibit_receiver->add_callback(std::bind(&ModuleLevelTrigger::dfo_busy_callback, this, std::placeholders::_1));
 
   m_send_trigger_decisions_thread = std::thread(&ModuleLevelTrigger::send_trigger_decisions, this);
@@ -207,8 +205,7 @@ ModuleLevelTrigger::send_trigger_decisions()
   m_lc_kPaused.store(0);
   m_lc_kDead.store(0);
 
-  iomanager::IOManager iom;
-  std::shared_ptr<iomanager::SenderConcept<dfmessages::TriggerDecision>> td_sender = iom.get_sender<dfmessages::TriggerDecision>(m_trigger_decision_connection);
+  auto td_sender = get_iom_sender<dfmessages::TriggerDecision>(m_trigger_decision_connection);
 
   while (true) {
     triggeralgs::TriggerCandidate tc;

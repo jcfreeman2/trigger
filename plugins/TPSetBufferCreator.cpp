@@ -49,19 +49,18 @@ void
 TPSetBufferCreator::init(const nlohmann::json& init_data)
 {
   auto qi = appfwk::connection_index(init_data, { "tpset_source", "data_request_source", "fragment_sink" });
-  iomanager::IOManager iom;
   try {
-    m_input_queue_tps = iom.get_receiver<trigger::TPSet>(qi["tpset_source"]);
+    m_input_queue_tps = get_iom_receiver<trigger::TPSet>(qi["tpset_source"]);
   } catch (const ers::Issue& excpt) {
     throw InvalidQueueFatalError(ERS_HERE, get_name(), "tpset_source", excpt);
   }
   try {
-    m_input_queue_dr = iom.get_receiver<dfmessages::DataRequest>(qi["data_request_source"]);
+    m_input_queue_dr = get_iom_receiver<dfmessages::DataRequest>(qi["data_request_source"]);
   } catch (const ers::Issue& excpt) {
     throw InvalidQueueFatalError(ERS_HERE, get_name(), "data_request_source", excpt);
   }
   try {
-    m_output_queue_frag = iom.get_sender<std::pair<std::unique_ptr<daqdataformats::Fragment>, std::string>>(qi["fragment_sink"]);
+    m_output_queue_frag = get_iom_sender<std::pair<std::unique_ptr<daqdataformats::Fragment>, std::string>>(qi["fragment_sink"]);
   } catch (const ers::Issue& excpt) {
     throw InvalidQueueFatalError(ERS_HERE, get_name(), "fragment_sink", excpt);
   }

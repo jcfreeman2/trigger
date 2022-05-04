@@ -80,8 +80,7 @@ void
 TimingTriggerCandidateMaker::init(const nlohmann::json& iniobj)
 {
   try {
-    iomanager::IOManager iom;
-    m_output_queue = iom.get_sender<triggeralgs::TriggerCandidate>(appfwk::connection_inst(iniobj, "output"));
+    m_output_queue = get_iom_sender<triggeralgs::TriggerCandidate>(appfwk::connection_inst(iniobj, "output"));
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
   }
@@ -96,8 +95,7 @@ TimingTriggerCandidateMaker::do_start(const nlohmann::json&)
   m_tc_sig_type_err_count.store(0);
   m_tc_total_count.store(0);
 
-  iomanager::IOManager iom;
-  m_hsievent_receiver = iom.get_receiver<dfmessages::HSIEvent>(m_hsievent_receive_connection);
+  m_hsievent_receiver = get_iom_receiver<dfmessages::HSIEvent>(m_hsievent_receive_connection);
   m_hsievent_receiver->add_callback(std::bind(&TimingTriggerCandidateMaker::receive_hsievent, this, std::placeholders::_1));
   
   TLOG_DEBUG(2) << get_name() + " successfully started.";

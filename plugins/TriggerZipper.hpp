@@ -110,13 +110,11 @@ public:
   }
   void set_input(const std::string& name)
   {
-    iomanager::IOManager iom;
-    m_inq = iom.get_receiver<TSET>(name);
+    m_inq = get_iom_receiver<TSET>(name);
   }
   void set_output(const std::string& name)
   {
-    iomanager::IOManager iom;
-    m_outq = iom.get_sender<TSET>(name);
+    m_outq = get_iom_sender<TSET>(name);
   }
 
   void do_configure(const nlohmann::json& cfgobj)

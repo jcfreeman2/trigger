@@ -73,9 +73,8 @@ public:
 
   void init(const nlohmann::json& obj) override
   {
-    iomanager::IOManager iom;
-    m_input_queue = iom.get_receiver<IN>(appfwk::connection_inst(obj, "input"));
-    m_output_queue = iom.get_sender<OUT>(appfwk::connection_inst(obj, "output"));
+    m_input_queue = get_iom_receiver<IN>(appfwk::connection_inst(obj, "input"));
+    m_output_queue = get_iom_sender<OUT>(appfwk::connection_inst(obj, "output"));
   }
 
 protected:

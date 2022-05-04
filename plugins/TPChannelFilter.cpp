@@ -33,10 +33,9 @@ TPChannelFilter::TPChannelFilter(const std::string& name)
 void
 TPChannelFilter::init(const nlohmann::json& iniobj)
 {
-  iomanager::IOManager iom;
   try {
-    m_input_queue = iom.get_receiver<TPSet>(appfwk::connection_inst(iniobj, "tpset_source"));
-    m_output_queue = iom.get_sender<TPSet>(appfwk::connection_inst(iniobj, "tpset_sink"));
+    m_input_queue = get_iom_receiver<TPSet>(appfwk::connection_inst(iniobj, "tpset_source"));
+    m_output_queue = get_iom_sender<TPSet>(appfwk::connection_inst(iniobj, "tpset_sink"));
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
   }

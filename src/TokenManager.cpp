@@ -28,8 +28,7 @@ TokenManager::TokenManager(const std::string& connection_name,
 {
   m_open_trigger_time = std::chrono::steady_clock::now();
 
-  iomanager::IOManager iom;
-  m_token_receiver = iom.get_receiver<dfmessages::TriggerDecisionToken>(m_connection_name);
+  m_token_receiver = get_iom_receiver<dfmessages::TriggerDecisionToken>(m_connection_name);
   m_token_receiver->add_callback(std::bind(&TokenManager::receive_token, this, std::placeholders::_1));
 }
 

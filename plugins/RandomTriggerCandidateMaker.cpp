@@ -50,9 +50,8 @@ RandomTriggerCandidateMaker::RandomTriggerCandidateMaker(const std::string& name
 void
 RandomTriggerCandidateMaker::init(const nlohmann::json& obj)
 {
-  iomanager::IOManager iom;
-  m_time_sync_source = iom.get_receiver<dfmessages::TimeSync>(appfwk::connection_inst(obj, "time_sync_source"));
-  m_trigger_candidate_sink = iom.get_sender<triggeralgs::TriggerCandidate>(appfwk::connection_inst(obj, "trigger_candiate_sink"));
+  m_time_sync_source = get_iom_receiver<dfmessages::TimeSync>(appfwk::connection_inst(obj, "time_sync_source"));
+  m_trigger_candidate_sink = get_iom_sender<triggeralgs::TriggerCandidate>(appfwk::connection_inst(obj, "trigger_candiate_sink"));
 }
 
 void
