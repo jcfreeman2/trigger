@@ -102,7 +102,7 @@ static void
 push0(sender_t in, trigger::TPSet&& tpset)
 {
   TLOG() << "Pushing " << tpset.origin << " @ " << tpset.start_time;
-  in->send(tpset, (duration_t)0);
+  in->send(std::move(tpset), (duration_t)0);
 }
 
 BOOST_AUTO_TEST_CASE(ZipperScenario1)
