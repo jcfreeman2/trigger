@@ -99,7 +99,7 @@ pop_must_succeed(receiver_t out)
 }
 
 static void
-push0(sender_t in, trigger::TPSet&& tpset)
+push0(sender_t in, trigger::TPSet tpset)
 {
   TLOG() << "Pushing " << tpset.origin << " @ " << tpset.start_time;
   in->send(std::move(tpset), (duration_t)0);
@@ -126,9 +126,7 @@ BOOST_AUTO_TEST_CASE(ZipperScenario1)
   nlohmann::json jcfg = cfg, jempty;
   zip->do_configure(jcfg);
 
-  TPSetSrc s1_base{ 1 }, s2_base{ 2 };
-  TPSetSrc s1 = s1_base;
-  TPSetSrc s2 = s2_base;
+  TPSetSrc s1{ 1 }, s2{ 2 };
 
   zip->do_start(jempty);
 
@@ -137,16 +135,11 @@ BOOST_AUTO_TEST_CASE(ZipperScenario1)
 
   pop_must_timeout(out);
 
-  s1 = s1_base;
-  s2 = s2_base;
-
   push0(in, s1(11));
   push0(in, s2(13));
 
   auto got = pop_must_succeed(out);
   BOOST_CHECK_EQUAL(got.start_time, 10);
-
-  s1 = s1_base;
 
   push0(in, s1(14));
 
