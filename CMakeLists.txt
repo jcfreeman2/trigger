@@ -102,7 +102,7 @@ daq_add_application( streamed_TPs_to_text streamed_TPs_to_text.cxx TEST LINK_LIB
 daq_add_unit_test(TokenManager_test              LINK_LIBRARIES trigger)
 daq_add_unit_test(TxSet_test                     LINK_LIBRARIES trigger)
 daq_add_unit_test(BufferManager_test             LINK_LIBRARIES trigger)
-#daq_add_unit_test(TriggerZipper_test             LINK_LIBRARIES trigger)
+daq_add_unit_test(TriggerZipper_test             LINK_LIBRARIES trigger)
 daq_add_unit_test(TriggerObjectOverlay_test      LINK_LIBRARIES trigger)
 
 ##############################################################################
