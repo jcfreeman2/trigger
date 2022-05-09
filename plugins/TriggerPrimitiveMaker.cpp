@@ -156,13 +156,7 @@ TriggerPrimitiveMaker::read_tpsets(std::string filename, int region, int element
 
       // If we crossed a time boundary, push the current TPSet and reset it
       if (current_tpset_number > prev_tpset_number) {
-        if (!tpset.objects.empty()) {
-          // We don't send empty TPSets, so there's no point creating them
-          tpsets.push_back(tpset);
-        }
-        prev_tpset_number = current_tpset_number;
-
-        tpset.start_time = current_tpset_number * m_conf.tpset_time_width + m_conf.tpset_time_offset;
+        tpset.start_time = prev_tpset_number * m_conf.tpset_time_width + m_conf.tpset_time_offset;
         tpset.end_time = tpset.start_time + m_conf.tpset_time_width;
         tpset.seqno = seqno;
         ++seqno;
@@ -172,6 +166,13 @@ TriggerPrimitiveMaker::read_tpsets(std::string filename, int region, int element
         tpset.origin.element_id = element;
 
         tpset.type = TPSet::Type::kPayload;
+
+        if (!tpset.objects.empty()) {
+          // We don't send empty TPSets, so there's no point creating them
+          tpsets.push_back(tpset);
+        }
+        prev_tpset_number = current_tpset_number;
+
         tpset.objects.clear();
       }
       tpset.objects.push_back(tp);
