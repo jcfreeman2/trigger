@@ -14,24 +14,20 @@
 #ifndef TRIGGER_PLUGINS_MODULELEVELTRIGGER_HPP_
 #define TRIGGER_PLUGINS_MODULELEVELTRIGGER_HPP_
 
-#include "trigger/TokenManager.hpp"
 #include "trigger/LivetimeCounter.hpp"
+#include "trigger/TokenManager.hpp"
 #include "trigger/moduleleveltriggerinfo/InfoNljs.hpp"
 
-#include "triggeralgs/TriggerCandidate.hpp"
-
+#include "appfwk/DAQModule.hpp"
 #include "daqdataformats/GeoID.hpp"
 #include "dfmessages/TimeSync.hpp"
 #include "dfmessages/TriggerDecision.hpp"
 #include "dfmessages/TriggerDecisionToken.hpp"
 #include "dfmessages/TriggerInhibit.hpp"
 #include "dfmessages/Types.hpp"
-
+#include "iomanager/Receiver.hpp"
 #include "timinglibs/TimestampEstimator.hpp"
-
-#include "appfwk/DAQModule.hpp"
-#include "appfwk/DAQSink.hpp"
-#include "appfwk/DAQSource.hpp"
+#include "triggeralgs/TriggerCandidate.hpp"
 
 #include <memory>
 #include <set>
@@ -80,10 +76,11 @@ private:
   dfmessages::TriggerDecision create_decision(const triggeralgs::TriggerCandidate& tc);
   dfmessages::trigger_type_t m_trigger_type_shifted;
 
-  void dfo_busy_callback(ipm::Receiver::Response message);
+  void dfo_busy_callback(dfmessages::TriggerInhibit& inhibit);
 
   // Queue sources and sinks
-  std::unique_ptr<appfwk::DAQSource<triggeralgs::TriggerCandidate>> m_candidate_source;
+  std::shared_ptr<iomanager::ReceiverConcept<triggeralgs::TriggerCandidate>> m_candidate_source;
+  std::shared_ptr<iomanager::ReceiverConcept<dfmessages::TriggerInhibit>> m_inhibit_receiver;
 
   std::vector<dfmessages::GeoID> m_links;
 
