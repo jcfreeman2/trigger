@@ -33,7 +33,6 @@ TABuffer::init(const nlohmann::json& init_data)
   try {
     m_input_queue_tas.reset(new tas_source_t(appfwk::queue_inst(init_data, "taset_source")));
     m_input_queue_dr.reset(new dr_source_t(appfwk::queue_inst(init_data, "data_request_source")));
-    m_output_queue_frag.reset(new fragment_sink_t(appfwk::queue_inst(init_data, "fragment_sink")));
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
   }

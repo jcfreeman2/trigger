@@ -120,9 +120,6 @@ private:
   using dr_source_t = dunedaq::appfwk::DAQSource<dfmessages::DataRequest>;
   std::unique_ptr<dr_source_t> m_input_queue_dr{nullptr};
 
-  using fragment_sink_t = dunedaq::appfwk::DAQSink<std::pair<std::unique_ptr<daqdataformats::Fragment>, std::string>>;
-  std::unique_ptr<fragment_sink_t> m_output_queue_frag{nullptr};
-
   std::chrono::milliseconds m_queue_timeout;
 
   using buffer_object_t = TCWrapper;
