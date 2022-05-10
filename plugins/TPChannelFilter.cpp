@@ -7,6 +7,9 @@
  */
 
 #include "TPChannelFilter.hpp"
+
+#include "appfwk/DAQModuleHelper.hpp"
+#include "iomanager/IOManager.hpp"
 #include "triggeralgs/TriggerPrimitive.hpp"
 
 #include <string>
@@ -31,8 +34,8 @@ void
 TPChannelFilter::init(const nlohmann::json& iniobj)
 {
   try {
-    m_input_queue.reset(new source_t(appfwk::queue_inst(iniobj, "tpset_source")));
-    m_output_queue.reset(new sink_t(appfwk::queue_inst(iniobj, "tpset_sink")));
+    m_input_queue = get_iom_receiver<TPSet>(appfwk::connection_inst(iniobj, "tpset_source"));
+    m_output_queue = get_iom_sender<TPSet>(appfwk::connection_inst(iniobj, "tpset_sink"));
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
   }
@@ -96,8 +99,8 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
   while (true) {
     TPSet tpset;
     try {
-      m_input_queue->pop(tpset, m_queue_timeout);
-    } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+      tpset = m_input_queue->receive(m_queue_timeout);
+    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
       if (!running_flag.load()) {
@@ -122,12 +125,12 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
     // The rule is that we don't send empty TPSets, so ensure that
     if (!tpset.objects.empty()) {
       try {
-        m_output_queue->push(tpset, m_queue_timeout);
-      } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+        m_output_queue->send(std::move(tpset), m_queue_timeout);
+      } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
         std::ostringstream oss_warn;
         oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
         ers::warning(
-          dunedaq::appfwk::QueueTimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
+          dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
       }
     }
 

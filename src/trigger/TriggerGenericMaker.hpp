@@ -16,14 +16,13 @@
 
 #include "appfwk/DAQModule.hpp"
 #include "appfwk/DAQModuleHelper.hpp"
-#include "appfwk/DAQSink.hpp"
-#include "appfwk/DAQSource.hpp"
-#include "utilities/WorkerThread.hpp"
-
 #include "daqdataformats/GeoID.hpp"
-
-#include "logging/Logging.hpp"
 #include "detdataformats/trigger/Types.hpp"
+#include "iomanager/IOManager.hpp"
+#include "iomanager/Receiver.hpp"
+#include "iomanager/Sender.hpp"
+#include "logging/Logging.hpp"
+#include "utilities/WorkerThread.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -74,8 +73,8 @@ public:
 
   void init(const nlohmann::json& obj) override
   {
-    m_input_queue.reset(new source_t(appfwk::queue_inst(obj, "input")));
-    m_output_queue.reset(new sink_t(appfwk::queue_inst(obj, "output")));
+    m_input_queue = get_iom_receiver<IN>(appfwk::connection_inst(obj, "input"));
+    m_output_queue = get_iom_sender<OUT>(appfwk::connection_inst(obj, "output"));
   }
 
 protected:
@@ -101,11 +100,11 @@ private:
   size_t m_received_count;
   size_t m_sent_count;
 
-  using source_t = dunedaq::appfwk::DAQSource<IN>;
-  std::unique_ptr<source_t> m_input_queue;
+  using source_t = dunedaq::iomanager::ReceiverConcept<IN>;
+  std::shared_ptr<source_t> m_input_queue;
 
-  using sink_t = dunedaq::appfwk::DAQSink<OUT>;
-  std::unique_ptr<sink_t> m_output_queue;
+  using sink_t = dunedaq::iomanager::SenderConcept<OUT>;
+  std::shared_ptr<sink_t> m_output_queue;
 
   std::chrono::milliseconds m_queue_timeout;
 
@@ -161,8 +160,8 @@ private:
   bool receive(IN& in)
   {
     try {
-      m_input_queue->pop(in, m_queue_timeout);
-    } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+      in = m_input_queue->receive(m_queue_timeout);
+    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
       // it is perfectly reasonable that there might be no data in the queue
       // some fraction of the times that we check, so we just continue on and try again
       return false;
@@ -171,11 +170,11 @@ private:
     return true;
   }
 
-  bool send(const OUT& out)
+  bool send(OUT&& out)
   {
     try {
-      m_output_queue->push(out, m_queue_timeout);
-    } catch (const dunedaq::appfwk::QueueTimeoutExpired& excpt) {
+      m_output_queue->send(std::move(out), m_queue_timeout);
+    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
       ers::warning(excpt);
       return false;
     }
@@ -218,7 +217,7 @@ public:
     }
 
     while (out_vec.size()) {
-      if (!m_parent.send(out_vec.back())) {
+      if (!m_parent.send(std::move(out_vec.back()))) {
         ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
         // out_vec.back() is dropped
       }
@@ -307,7 +306,7 @@ public: // NOLINT
           }
           process_slice(time_slice, elems);
         }
-        
+
         Set<B> heartbeat;
         heartbeat.seqno = m_parent.m_sent_count;
         heartbeat.type = Set<B>::Type::kHeartbeat;
@@ -315,7 +314,7 @@ public: // NOLINT
         heartbeat.end_time = in.end_time;
         heartbeat.origin = daqdataformats::GeoID(
           daqdataformats::GeoID::SystemType::kDataSelection, m_parent.m_geoid_region_id, m_parent.m_geoid_element_id);
-        if (!m_parent.send(heartbeat)) {
+        if (!m_parent.send(std::move(heartbeat))) {
           ers::error(AlgorithmFailedToHeartbeat(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // heartbeat is dropped
         }
@@ -353,7 +352,7 @@ public: // NOLINT
           daqdataformats::GeoID::SystemType::kDataSelection, m_parent.m_geoid_region_id, m_parent.m_geoid_element_id);
         TLOG_DEBUG(2) << "Output set window ready with start time " << out.start_time << " end time " << out.end_time
                       << " and " << out.objects.size() << " members";
-        if (!m_parent.send(out)) {
+        if (!m_parent.send(std::move(out))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out is dropped
         }
@@ -387,7 +386,7 @@ public: // NOLINT
           daqdataformats::GeoID::SystemType::kDataSelection, m_parent.m_geoid_region_id, m_parent.m_geoid_element_id);
         TLOG_DEBUG(2) << "Output set window drained with start time " << out.start_time << " end time " << out.end_time
                       << " and " << out.objects.size() << " members";
-        if (!m_parent.send(out)) {
+        if (!m_parent.send(std::move(out))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out is dropped
         }
@@ -472,7 +471,7 @@ public: // NOLINT
     }
 
     while (out_vec.size()) {
-      if (!m_parent.send(out_vec.back())) {
+      if (!m_parent.send(std::move(out_vec.back()))) {
         ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
         // out.back() is dropped
       }
@@ -490,7 +489,7 @@ public: // NOLINT
       std::vector<OUT> out_vec;
       process_slice(time_slice, out_vec);
       while (out_vec.size()) {
-        if (!m_parent.send(out_vec.back())) {
+        if (!m_parent.send(std::move(out_vec.back()))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out.back() is dropped
         }
