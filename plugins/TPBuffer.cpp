@@ -101,7 +101,7 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
         m_latency_buffer_impl->write(TPWrapper(tp));
         ++n_tps_received;
       }
-    } catch (const appfwk::QueueTimeoutExpired&) {
+    } catch (const iomanager::TimeoutExpired&) {
       // It's fine if there was no new input
     }
 
@@ -111,7 +111,7 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
       popped_anything = true;
       ++n_requests_received;
       m_request_handler_impl->issue_request(data_request, false);
-    } catch (const appfwk::QueueTimeoutExpired&) {
+    } catch (const iomanager::TimeoutExpired&) {
       // It's fine if there was no new input
     }
 
