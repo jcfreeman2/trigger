@@ -78,6 +78,9 @@ daq_add_plugin(TPBuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readou
 daq_add_plugin(TABuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
 daq_add_plugin(TCBuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
 daq_add_plugin(TPChannelFilter duneDAQModule LINK_LIBRARIES trigger)
+daq_add_plugin(TPSetTee duneDAQModule LINK_LIBRARIES trigger)
+daq_add_plugin(TASetTee duneDAQModule LINK_LIBRARIES trigger)
+daq_add_plugin(TCTee duneDAQModule LINK_LIBRARIES trigger)
 
 daq_add_plugin(TPZipper duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TAZipper duneDAQModule LINK_LIBRARIES trigger)
