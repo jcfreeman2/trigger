@@ -86,6 +86,19 @@ ModuleLevelTrigger::do_configure(const nlohmann::json& confobj)
 {
   auto params = confobj.get<moduleleveltrigger::ConfParams>();
 
+  // set readout times
+  m_readout_window_map[params.c0.candidate_type] = { params.c0.time_before, params.c0.time_after };
+  m_readout_window_map[params.c1.candidate_type] = { params.c1.time_before, params.c1.time_after };
+  m_readout_window_map[params.c2.candidate_type] = { params.c2.time_before, params.c2.time_after };
+  m_readout_window_map[params.c3.candidate_type] = { params.c3.time_before, params.c3.time_after };
+  m_readout_window_map[params.c4.candidate_type] = { params.c4.time_before, params.c4.time_after };
+  m_readout_window_map[params.c5.candidate_type] = { params.c5.time_before, params.c5.time_after };
+  m_readout_window_map[params.c6.candidate_type] = { params.c6.time_before, params.c6.time_after };
+  m_readout_window_map[params.c7.candidate_type] = { params.c7.time_before, params.c7.time_after };
+  m_buffer_timeout = params.buffer_timeout;
+  m_td_out_of_timeout = params.td_out_of_timeout;
+  TLOG(3) << "TD out of timeout: " << m_td_out_of_timeout;
+
   m_links.clear();
   for (auto const& link : params.links) {
     m_links.push_back(
@@ -159,36 +172,36 @@ ModuleLevelTrigger::do_scrap(const nlohmann::json& /*scrapobj*/)
 }
 
 dfmessages::TriggerDecision
-ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
+ModuleLevelTrigger::create_decision()
 {
   dfmessages::TriggerDecision decision;
   decision.trigger_number = m_last_trigger_number + 1;
   decision.run_number = m_run_number;
-  decision.trigger_timestamp = tc.time_candidate;
+  decision.trigger_timestamp = m_tc_loop.back().time_candidate;
   decision.readout_type = dfmessages::ReadoutType::kLocalized;
 
   if (m_hsi_passthrough == true){
-    if (tc.type == triggeralgs::TriggerCandidate::Type::kTiming){
-      decision.trigger_type = tc.detid & 0xff;
+    if (m_tc_loop.back().type == triggeralgs::TriggerCandidate::Type::kTiming){
+      decision.trigger_type = m_tc_loop.back().detid & 0xff;
     } else {
-      m_trigger_type_shifted = ((int)tc.type << 8);
+      m_trigger_type_shifted = ((int)m_tc_loop.back().type << 8);
       decision.trigger_type = m_trigger_type_shifted;
     }
   } else {
     decision.trigger_type = 1; // m_trigger_type;
   }
 
-  TLOG_DEBUG(3) << "HSI passthrough: " << m_hsi_passthrough << ", TC detid: " << tc.detid << ", TC type: " << (int)tc.type << ", DECISION trigger type: " << decision.trigger_type;
 
   for (auto link : m_links) {
     dfmessages::ComponentRequest request;
     request.component = link;
-    request.window_begin = tc.time_start;
-    request.window_end = tc.time_end;
+    request.window_begin = m_readout_start;
+    request.window_end = m_readout_end;
 
     decision.components.push_back(request);
   }
 
+  clean_tc_queue();
   return decision;
 }
 
@@ -224,9 +237,13 @@ ModuleLevelTrigger::send_trigger_decisions()
       }
     }
 
+    process_tc(tc);
+    TLOG(3) << "TC loop size: " << m_tc_loop.size();
+    if (!create_decision_check()){ continue; }
+
     if (!m_paused.load() && !m_dfo_is_busy.load() ) {
 
-      dfmessages::TriggerDecision decision = create_decision(tc);
+      dfmessages::TriggerDecision decision = create_decision();
 
       TLOG_DEBUG(1) << "Sending a decision with triggernumber " << decision.trigger_number << " timestamp "
                     << decision.trigger_timestamp << " number of links " << decision.components.size()
@@ -284,6 +301,94 @@ ModuleLevelTrigger::dfo_busy_callback(ipm::Receiver::Response message)
     m_dfo_is_busy = inhibit.busy;
     m_livetime_counter->set_state(LivetimeCounter::State::kDead);
   }
+}
+
+void
+ModuleLevelTrigger::process_tc(const triggeralgs::TriggerCandidate& tc)
+{
+  m_tc_loop.push_back(tc);
+  if (m_tc_loop.size() > 1) { 
+    update_readout_window(tc); 
+  } else { 
+    check_overlap(tc);
+    try {
+      if (m_td_out_of_timeout_flag == true){
+        throw dunedaq::trigger::TCOutOfTimeout(ERS_HERE, get_name(), tc.time_candidate);
+      }
+    } catch (TCOutOfTimeout& e) {
+      ers::error(e);
+      return;
+    }
+    if ((m_td_out_of_timeout == true) & (m_td_out_of_timeout_flag == true)) {
+      // in this case completely drop the tc
+      m_tc_loop.clear();
+      return;
+    }
+    set_readout_window(tc); 
+  }
+  set_endtime();
+}
+
+void
+ModuleLevelTrigger::set_readout_window(const triggeralgs::TriggerCandidate& tc)
+{
+  m_readout_before = m_readout_window_map[(int)tc.type].first;
+  m_readout_after = m_readout_window_map[(int)tc.type].second;
+  m_readout_start = tc.time_candidate - m_readout_before;
+  m_readout_end = tc.time_candidate + m_readout_after;
+  TLOG(3) << "Set new readout window as: " << m_readout_start << " " << m_readout_end; 
+}
+
+void
+ModuleLevelTrigger::update_readout_window(const triggeralgs::TriggerCandidate& tc)
+{ 
+  if ((tc.time_candidate - m_readout_window_map[(int)tc.type].first) < m_readout_start) {
+    m_readout_start = tc.time_candidate - m_readout_window_map[(int)tc.type].first;
+    TLOG(3) << "Updated readout window start: " << m_readout_start;
+  }
+  if ((tc.time_candidate + m_readout_window_map[(int)tc.type].second) > m_readout_end) {
+    m_readout_end = tc.time_candidate + m_readout_window_map[(int)tc.type].second;
+    TLOG(3) << "Updated readout window end: " << m_readout_end;
+  }
+}
+
+void
+ModuleLevelTrigger::set_endtime()
+{
+  m_endtime = m_readout_end + m_buffer_timeout;
+  TLOG(3) << "New endtime set as: " << m_endtime;
+}
+
+bool
+ModuleLevelTrigger::create_decision_check()
+{
+  auto m_timestamp_endtime = m_endtime/50; // to get ms from 50 MHz ticks
+  int64_t m_timestamp_now = std::chrono::duration_cast<std::chrono::microseconds>(system_clock::now().time_since_epoch()).count();
+  int64_t m_timestamp_diff = m_timestamp_now - m_timestamp_endtime;
+  TLOG(3) << "Time diff now - endtime (ms): " << m_timestamp_diff;
+  if (m_timestamp_diff >= 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void
+ModuleLevelTrigger::clean_tc_queue()
+{
+  m_tc_loop.clear();
+  m_previous_endtime = m_endtime;
+  m_td_out_of_timeout_flag = false;
+}
+
+void
+ModuleLevelTrigger::check_overlap(const triggeralgs::TriggerCandidate& tc)
+{
+  if ((tc.time_candidate - m_readout_window_map[(int)tc.type].first) < m_previous_endtime){
+    m_td_out_of_timeout_flag = true;
+  } else {
+    m_td_out_of_timeout_flag = false;
+  } 
 }
 
 } // namespace trigger

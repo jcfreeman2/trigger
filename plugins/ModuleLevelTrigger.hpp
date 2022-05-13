@@ -17,8 +17,10 @@
 #include "trigger/TokenManager.hpp"
 #include "trigger/LivetimeCounter.hpp"
 #include "trigger/moduleleveltriggerinfo/InfoNljs.hpp"
+#include "trigger/Issues.hpp"
 
 #include "triggeralgs/TriggerCandidate.hpp"
+#include "triggeralgs/TriggerActivity.hpp"
 
 #include "daqdataformats/GeoID.hpp"
 #include "dfmessages/TimeSync.hpp"
@@ -37,6 +39,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace dunedaq {
 
@@ -77,7 +80,7 @@ private:
   std::thread m_send_trigger_decisions_thread;
 
   // Create the next trigger decision
-  dfmessages::TriggerDecision create_decision(const triggeralgs::TriggerCandidate& tc);
+  dfmessages::TriggerDecision create_decision();
   dfmessages::trigger_type_t m_trigger_type_shifted;
 
   void dfo_busy_callback(ipm::Receiver::Response message);
@@ -111,6 +114,26 @@ private:
   LivetimeCounter::state_time_t m_lc_kPaused_count;
   LivetimeCounter::state_time_t m_lc_kDead_count;
   LivetimeCounter::state_time_t m_lc_deadtime;
+
+  // NOLINTNEXTLINE(build/unsigned)
+  std::map<uint32_t, std::pair<triggeralgs::timestamp_t, triggeralgs::timestamp_t>> m_readout_window_map; 
+  std::atomic<bool> m_td_out_of_timeout;
+  std::atomic<bool> m_td_out_of_timeout_flag;
+  int m_buffer_timeout;
+  int m_readout_before;
+  int m_readout_after;
+  int64_t m_readout_start;
+  int64_t m_readout_end;
+  int64_t m_endtime;
+  int64_t m_previous_endtime;
+  std::vector<triggeralgs::TriggerCandidate> m_tc_loop;
+  void process_tc(const triggeralgs::TriggerCandidate& tc);
+  void set_readout_window(const triggeralgs::TriggerCandidate& tc);
+  void update_readout_window(const triggeralgs::TriggerCandidate& tc);
+  void set_endtime();
+  bool create_decision_check();
+  void clean_tc_queue();
+  void check_overlap(const triggeralgs::TriggerCandidate& tc);
 
   // Opmon variables
   using metric_counter_type = decltype(moduleleveltriggerinfo::Info::tc_received_count);

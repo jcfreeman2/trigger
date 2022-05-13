@@ -147,6 +147,13 @@ ERS_DECLARE_ISSUE_BASE(trigger,
                        ((std::string)name),
                        ((std::bitset<16>)trigger_type))
 
+ERS_DECLARE_ISSUE_BASE(trigger,
+                       TCOutOfTimeout,
+                       appfwk::GeneralDAQModuleIssue,
+                       "TC overlapping previous TD readout window: " << tc_timestamp,
+                       ((std::string)name),
+                       ((int64_t)tc_timestamp))
+
 } // namespace dunedaq
 
 #endif // TRIGGER_INCLUDE_TRIGGER_ISSUES_HPP_
