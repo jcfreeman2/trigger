@@ -34,7 +34,7 @@ void
 TCBuffer::init(const nlohmann::json& init_data)
 {
   try {
-    m_input_queue_tcs = get_iom_receiver<triggeralgs::TriggerCandidate>(appfwk::connection_inst(init_data, "tcs_source").uid);
+    m_input_queue_tcs = get_iom_receiver<triggeralgs::TriggerCandidate>(appfwk::connection_inst(init_data, "tc_source").uid);
     m_input_queue_dr = get_iom_receiver<dfmessages::DataRequest>(appfwk::connection_inst(init_data, "data_request_source").uid);
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
