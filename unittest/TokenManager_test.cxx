@@ -37,7 +37,7 @@ struct IOManagerTestFixture
   {
     dunedaq::iomanager::ConnectionIds_t connections;
     dunedaq::iomanager::ConnectionId cid;
-    cid.service_type = dunedaq::iomanager::ServiceType::kNetwork;
+    cid.service_type = dunedaq::iomanager::ServiceType::kNetReceiver;
     cid.uid = "foo";
     cid.uri = "inproc://foo";
     cid.data_type = "dfmessages::TriggerDecisionToken";
