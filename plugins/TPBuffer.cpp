@@ -8,6 +8,7 @@
 
 #include "TPBuffer.hpp"
 
+#include "appfwk/DAQModuleHelper.hpp"
 #include "daqdataformats/GeoID.hpp"
 
 #include <string>
@@ -31,8 +32,8 @@ void
 TPBuffer::init(const nlohmann::json& init_data)
 {
   try {
-    m_input_queue_tps.reset(new tps_source_t(appfwk::queue_inst(init_data, "tpset_source")));
-    m_input_queue_dr.reset(new dr_source_t(appfwk::queue_inst(init_data, "data_request_source")));
+    m_input_queue_tps = get_iom_receiver<TPSet>(appfwk::connection_inst(init_data, "tpset_source").uid);
+    m_input_queue_dr = get_iom_receiver<dfmessages::DataRequest>(appfwk::connection_inst(init_data, "data_request_source").uid);
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
   }
@@ -94,8 +95,7 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
     bool popped_anything=false;
     
     try {
-      TPSet tpset;
-      m_input_queue_tps->pop(tpset);
+      TPSet tpset = m_input_queue_tps->receive(std::chrono::milliseconds(10));
       popped_anything = true;
       for (auto const& tp: tpset.objects) {
         m_latency_buffer_impl->write(TPWrapper(tp));
@@ -106,8 +106,7 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
     }
 
     try {
-      dfmessages::DataRequest data_request;
-      m_input_queue_dr->pop(data_request);
+      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(10));
       popped_anything = true;
       ++n_requests_received;
       m_request_handler_impl->issue_request(data_request, false);

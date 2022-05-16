@@ -9,10 +9,7 @@
 #ifndef TRIGGER_PLUGINS_TPBUFFER_HPP_
 #define TRIGGER_PLUGINS_TPBUFFER_HPP_
 
-#include "appfwk/DAQModule.hpp"
-#include "appfwk/DAQModuleHelper.hpp"
-#include "appfwk/DAQSink.hpp"
-#include "appfwk/DAQSource.hpp"
+#include "iomanager/Receiver.hpp"
 #include "readoutlibs/FrameErrorRegistry.hpp"
 #include "readoutlibs/models/DefaultRequestHandlerModel.hpp"
 #include "readoutlibs/models/BinarySearchQueueModel.hpp"
@@ -109,11 +106,11 @@ private:
 
   dunedaq::utilities::WorkerThread m_thread;
 
-  using tps_source_t = dunedaq::appfwk::DAQSource<trigger::TPSet>;
-  std::unique_ptr<tps_source_t> m_input_queue_tps{nullptr};
+  using tps_source_t = iomanager::ReceiverConcept<trigger::TPSet>;
+  std::shared_ptr<tps_source_t> m_input_queue_tps{nullptr};
 
-  using dr_source_t = dunedaq::appfwk::DAQSource<dfmessages::DataRequest>;
-  std::unique_ptr<dr_source_t> m_input_queue_dr{nullptr};
+  using dr_source_t = iomanager::ReceiverConcept<dfmessages::DataRequest>;
+  std::shared_ptr<dr_source_t> m_input_queue_dr{nullptr};
 
   std::chrono::milliseconds m_queue_timeout;
 

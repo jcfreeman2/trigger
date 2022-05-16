@@ -9,11 +9,8 @@
 #ifndef TRIGGER_PLUGINS_TABUFFER_HPP_
 #define TRIGGER_PLUGINS_TABUFFER_HPP_
 
-#include "appfwk/DAQModule.hpp"
-#include "appfwk/DAQModuleHelper.hpp"
-#include "appfwk/DAQSink.hpp"
-#include "appfwk/DAQSource.hpp"
 #include "daqdataformats/Fragment.hpp"
+#include "iomanager/Receiver.hpp"
 #include "readoutlibs/FrameErrorRegistry.hpp"
 #include "readoutlibs/models/DefaultRequestHandlerModel.hpp"
 #include "readoutlibs/models/BinarySearchQueueModel.hpp"
@@ -120,11 +117,11 @@ private:
 
   dunedaq::utilities::WorkerThread m_thread;
 
-  using tas_source_t = dunedaq::appfwk::DAQSource<trigger::TASet>;
-  std::unique_ptr<tas_source_t> m_input_queue_tas{nullptr};
+  using tas_source_t = iomanager::ReceiverConcept<trigger::TASet>;
+  std::shared_ptr<tas_source_t> m_input_queue_tas{nullptr};
 
-  using dr_source_t = dunedaq::appfwk::DAQSource<dfmessages::DataRequest>;
-  std::unique_ptr<dr_source_t> m_input_queue_dr{nullptr};
+  using dr_source_t = iomanager::ReceiverConcept<dfmessages::DataRequest>;
+  std::shared_ptr<dr_source_t> m_input_queue_dr{nullptr};
 
   std::chrono::milliseconds m_queue_timeout;
 

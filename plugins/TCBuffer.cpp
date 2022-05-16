@@ -8,9 +8,11 @@
 
 #include "TCBuffer.hpp"
 
+#include "appfwk/DAQModuleHelper.hpp"
 #include "dfmessages/DataRequest.hpp"
 #include "daqdataformats/GeoID.hpp"
 
+#include <chrono>
 #include <string>
 
 namespace dunedaq {
@@ -32,8 +34,8 @@ void
 TCBuffer::init(const nlohmann::json& init_data)
 {
   try {
-    m_input_queue_tcs.reset(new tcs_source_t(appfwk::queue_inst(init_data, "tc_source")));
-    m_input_queue_dr.reset(new dr_source_t(appfwk::queue_inst(init_data, "data_request_source")));
+    m_input_queue_tcs = get_iom_receiver<triggeralgs::TriggerCandidate>(appfwk::connection_inst(init_data, "tcs_source").uid);
+    m_input_queue_dr = get_iom_receiver<dfmessages::DataRequest>(appfwk::connection_inst(init_data, "data_request_source").uid);
   } catch (const ers::Issue& excpt) {
     throw dunedaq::trigger::InvalidQueueFatalError(ERS_HERE, get_name(), "input/output", excpt);
   }
@@ -95,8 +97,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     bool popped_anything=false;
     
     try {
-      triggeralgs::TriggerCandidate tc;
-      m_input_queue_tcs->pop(tc);
+      triggeralgs::TriggerCandidate tc = m_input_queue_tcs->receive(std::chrono::milliseconds(10));
       TLOG_DEBUG(2) << "Got TC with start time " << tc.time_start;
       popped_anything = true;
       m_latency_buffer_impl->write(TCWrapper(tc));
@@ -106,8 +107,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     }
 
     try {
-      dfmessages::DataRequest data_request;
-      m_input_queue_dr->pop(data_request);
+      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(10));
       auto& info = data_request.request_information;
       TLOG_DEBUG(2) << "Got data request with component " << info.component << ", window_begin " << info.window_begin << ", window_end " << info.window_end;
       popped_anything = true;
