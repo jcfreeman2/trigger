@@ -351,7 +351,7 @@ public: // NOLINT
 
       if (out.type == Set<B>::Type::kHeartbeat) {
         TLOG_DEBUG(4) << "Sending heartbeat with start time " << out.start_time;
-        if (!m_parent.send(out)) {
+        if (!m_parent.send(std::move(out))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out is dropped
         }
@@ -392,7 +392,7 @@ public: // NOLINT
           daqdataformats::GeoID::SystemType::kDataSelection, m_parent.m_geoid_region_id, m_parent.m_geoid_element_id);
 
       if (out.type == Set<B>::Type::kHeartbeat) {
-        if (!m_parent.send(out)) {
+        if (!m_parent.send(std::move(out))) {
           ers::error(AlgorithmFailedToSend(ERS_HERE, m_parent.get_name(), m_parent.m_algorithm_name));
           // out is dropped
         }
