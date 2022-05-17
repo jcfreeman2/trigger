@@ -84,6 +84,16 @@ ERS_DECLARE_ISSUE_BASE(trigger,
                        ((daqdataformats::timestamp_t)last_sent_time))
 
 ERS_DECLARE_ISSUE_BASE(trigger,
+                       UnalignedHeartbeat,
+                       appfwk::GeneralDAQModuleIssue,
+                       "The " << algorithm << " maker received a heartbeat with start time " << start_time
+                       << ", not aligned to a window time boundary " << window_time,
+                       ((std::string)name),
+                       ((std::string)algorithm)
+                       ((daqdataformats::timestamp_t)start_time)
+                       ((daqdataformats::timestamp_t)window_time))
+
+ERS_DECLARE_ISSUE_BASE(trigger,
                        TardyInputSet,
                        appfwk::GeneralDAQModuleIssue,
                        "Tardy input set from region " << region << " element " << element
