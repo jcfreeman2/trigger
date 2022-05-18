@@ -94,14 +94,18 @@ Tee<T>::do_work(std::atomic<bool>& running_flag)
       }
     }
 
+    size_t timeout_ms = 20;
     try {
       T object1(object);
-      m_output_queue1->send(std::move(object1), std::chrono::milliseconds(10));
-      T object2(object);
-      m_output_queue2->send(std::move(object2), std::chrono::milliseconds(10));
+      m_output_queue1->send(std::move(object1), std::chrono::milliseconds(timeout_ms));
     } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
-      std::ostringstream oss_warn;
-      ers::warning(dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), "push to output queue failed", 10));
+      ers::warning(dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), "push to output queue 1", timeout_ms));
+    }
+    try {
+      T object2(object);
+      m_output_queue2->send(std::move(object2), std::chrono::milliseconds(timeout_ms));
+    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
+      ers::warning(dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), "push to output queue 2", timeout_ms));
     }
   }
 
