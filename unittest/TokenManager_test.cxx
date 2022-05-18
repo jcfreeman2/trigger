@@ -42,6 +42,9 @@ struct IOManagerTestFixture
     cid.uri = "inproc://foo";
     cid.data_type = "dfmessages::TriggerDecisionToken";
     connections.push_back(cid);
+    cid.service_type = dunedaq::iomanager::ServiceType::kNetSender;
+    cid.uid = "foo_s";
+    connections.push_back(cid);
     get_iomanager()->configure(connections);
   }
   ~IOManagerTestFixture()
@@ -83,7 +86,7 @@ BOOST_AUTO_TEST_CASE(Basics)
   dfmessages::TriggerDecisionToken token;
   token.run_number = run_number;
   token.trigger_number = 1;
-  get_iom_sender<dfmessages::TriggerDecisionToken>("foo")->send(std::move(token), std::chrono::milliseconds(10));
+  get_iom_sender<dfmessages::TriggerDecisionToken>("foo_s")->send(std::move(token), std::chrono::milliseconds(10));
 
   // Give TokenManager a little time to pop the token off the queue
   std::this_thread::sleep_for(100ms);
