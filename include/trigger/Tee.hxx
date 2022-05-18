@@ -47,14 +47,14 @@ Tee<T>::init(const nlohmann::json& iniobj)
 
 template<class T>
 void
-Tee<T>::do_conf(const nlohmann::json& conf)
+Tee<T>::do_conf(const nlohmann::json&)
 {
   TLOG_DEBUG(2) << get_name() + " configured.";
 }
 
 template<class T>
 void
-Tee<T>::do_start(const nlohmann::json& args)
+Tee<T>::do_start(const nlohmann::json&)
 {
   m_thread.start_working_thread("tctee");
   TLOG_DEBUG(2) << get_name() + " successfully started.";
