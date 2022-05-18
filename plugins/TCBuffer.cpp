@@ -97,7 +97,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     bool popped_anything=false;
     
     try {
-      triggeralgs::TriggerCandidate tc = m_input_queue_tcs->receive(std::chrono::milliseconds(10));
+      triggeralgs::TriggerCandidate tc = m_input_queue_tcs->receive(std::chrono::milliseconds(0));
       TLOG_DEBUG(2) << "Got TC with start time " << tc.time_start;
       popped_anything = true;
       m_latency_buffer_impl->write(TCWrapper(tc));
@@ -107,7 +107,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     }
 
     try {
-      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(10));
+      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(0));
       auto& info = data_request.request_information;
       TLOG_DEBUG(2) << "Got data request with component " << info.component << ", window_begin " << info.window_begin << ", window_end " << info.window_end;
       popped_anything = true;

@@ -95,7 +95,7 @@ TABuffer::do_work(std::atomic<bool>& running_flag)
     bool popped_anything=false;
     
     try {
-      TASet taset = m_input_queue_tas->receive(std::chrono::milliseconds(10));
+      TASet taset = m_input_queue_tas->receive(std::chrono::milliseconds(0));
       popped_anything = true;
       for (auto const& ta: taset.objects) {
         m_latency_buffer_impl->write(TAWrapper(ta));
@@ -106,7 +106,7 @@ TABuffer::do_work(std::atomic<bool>& running_flag)
     }
 
     try {
-      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(10));
+      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(0));
       popped_anything = true;
       ++n_requests_received;
       m_request_handler_impl->issue_request(data_request, false);
