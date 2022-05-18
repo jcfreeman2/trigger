@@ -152,7 +152,7 @@ private:
       }
     }
     worker.drain();
-    TLOG() << ": Exiting do_work() method, received " << m_received_count << " inputs and successfully sent "
+    TLOG() << get_name() << ": Exiting do_work() method, received " << m_received_count << " inputs and successfully sent "
            << m_sent_count << " outputs. ";
     worker.reset();
   }

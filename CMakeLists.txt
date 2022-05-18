@@ -6,7 +6,7 @@ find_package(daq-cmake REQUIRED)
 daq_setup_environment()
 
 find_package(ers REQUIRED)
-find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS iostreams unit_test_framework REQUIRED)
 find_package(serialization REQUIRED)
 find_package(logging REQUIRED)
 find_package(appfwk REQUIRED)
@@ -19,6 +19,7 @@ find_package(daqdataformats REQUIRED)
 find_package(detdataformats REQUIRED)
 find_package(detchannelmaps REQUIRED)
 find_package(hdf5libs REQUIRED)
+find_package(readoutlibs REQUIRED)
 find_package(CLI11 REQUIRED)
 
 ##############################################################################
@@ -33,6 +34,7 @@ daq_add_library(TokenManager.cpp LivetimeCounter.cpp
   utilities::utilities
   iomanager::iomanager
   detdataformats::detdataformats
+  Boost::iostreams # Boost::iostreams comes in via readoutlibs
   detchannelmaps::detchannelmaps)
 
 ##############################################################################
@@ -55,6 +57,9 @@ daq_codegen(
   tpchannelfilter.jsonnet
   TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
 
+daq_codegen(
+  txbuffer.jsonnet DEP_PKGS readoutlibs TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
+  
 daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
 ##############################################################################
 # Plugins
@@ -69,7 +74,13 @@ daq_add_plugin(ModuleLevelTrigger duneDAQModule LINK_LIBRARIES trigger timinglib
 daq_add_plugin(TPSetSink duneDAQModule LINK_LIBRARIES trigger TEST)
 daq_add_plugin(FakeTPCreatorHeartbeatMaker duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TPSetBufferCreator duneDAQModule LINK_LIBRARIES trigger)
+daq_add_plugin(TPBuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
+daq_add_plugin(TABuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
+daq_add_plugin(TCBuffer duneDAQModule LINK_LIBRARIES trigger readoutlibs::readoutlibs)
 daq_add_plugin(TPChannelFilter duneDAQModule LINK_LIBRARIES trigger)
+daq_add_plugin(TPSetTee duneDAQModule LINK_LIBRARIES trigger)
+daq_add_plugin(TASetTee duneDAQModule LINK_LIBRARIES trigger)
+daq_add_plugin(TCTee duneDAQModule LINK_LIBRARIES trigger)
 
 daq_add_plugin(TPZipper duneDAQModule LINK_LIBRARIES trigger)
 daq_add_plugin(TAZipper duneDAQModule LINK_LIBRARIES trigger)
@@ -94,6 +105,7 @@ daq_add_application( set_serialization_speed set_serialization_speed.cxx TEST LI
 daq_add_application( taset_serialization taset_serialization.cxx TEST LINK_LIBRARIES trigger)
 daq_add_application( check_fragment_TPs check_fragment_TPs.cxx TEST LINK_LIBRARIES trigger hdf5libs::hdf5libs CLI11::CLI11)
 daq_add_application( print_trigger_type print_trigger_type.cxx TEST LINK_LIBRARIES trigger hdf5libs::hdf5libs CLI11::CLI11)
+daq_add_application( print_ds_fragments print_ds_fragments.cxx TEST LINK_LIBRARIES trigger hdf5libs::hdf5libs CLI11::CLI11)
 daq_add_application( streamed_TPs_to_text streamed_TPs_to_text.cxx TEST LINK_LIBRARIES trigger hdf5libs::hdf5libs CLI11::CLI11)
 
 ##############################################################################

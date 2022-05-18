@@ -214,7 +214,7 @@ public:
       ++m_tardy_counts[tset.origin];
 
       ers::warning(TardyInputSet(
-        ERS_HERE, get_name(), tset.origin.region_id, tset.origin.element_id, tset.start_time, m_zm.get_origin()));
+                                 ERS_HERE, get_name(), tset.origin.region_id, tset.origin.element_id, tset.start_time, m_zm.get_origin() >> 1));
       m_cache.pop_front(); // vestigial
     }
     drain();
