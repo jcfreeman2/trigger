@@ -15,7 +15,8 @@
 
 #include "readoutlibs/FrameErrorRegistry.hpp"
 #include "readoutlibs/models/DefaultRequestHandlerModel.hpp"
-#include "readoutlibs/models/BinarySearchQueueModel.hpp"
+#include "readoutlibs/models/SkipListLatencyBufferModel.hpp"
+#include "readoutlibs/models/DefaultSkipListRequestHandler.hpp"
 #include "triggeralgs/TriggerActivity.hpp"
 #include "triggeralgs/TriggerObjectOverlay.hpp"
 #include "utilities/WorkerThread.hpp"
@@ -122,9 +123,9 @@ private:
   std::chrono::milliseconds m_queue_timeout;
 
   using buffer_object_t = TCWrapper;
-  using latency_buffer_t = readoutlibs::BinarySearchQueueModel<buffer_object_t>;
+  using latency_buffer_t = readoutlibs::SkipListLatencyBufferModel<buffer_object_t>;
   std::unique_ptr<latency_buffer_t> m_latency_buffer_impl{nullptr};
-  using request_handler_t = readoutlibs::DefaultRequestHandlerModel<buffer_object_t, latency_buffer_t>;
+  using request_handler_t = readoutlibs::DefaultSkipListRequestHandler<buffer_object_t>;
   std::unique_ptr<request_handler_t> m_request_handler_impl{nullptr};
 
   // Don't actually use this, but it's currently needed as arg to request handler ctor
