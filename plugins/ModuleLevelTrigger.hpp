@@ -20,7 +20,6 @@
 #include "trigger/Issues.hpp"
 
 #include "triggeralgs/TriggerCandidate.hpp"
-#include "triggeralgs/TriggerActivity.hpp"
 
 #include "daqdataformats/GeoID.hpp"
 #include "dfmessages/TimeSync.hpp"
@@ -79,10 +78,6 @@ private:
   void send_trigger_decisions();
   std::thread m_send_trigger_decisions_thread;
 
-  // Create the next trigger decision
-  dfmessages::TriggerDecision create_decision();
-  dfmessages::trigger_type_t m_trigger_type_shifted;
-
   void dfo_busy_callback(ipm::Receiver::Response message);
 
   // Queue sources and sinks
@@ -115,25 +110,30 @@ private:
   LivetimeCounter::state_time_t m_lc_kDead_count;
   LivetimeCounter::state_time_t m_lc_deadtime;
 
-  // NOLINTNEXTLINE(build/unsigned)
-  std::map<uint32_t, std::pair<triggeralgs::timestamp_t, triggeralgs::timestamp_t>> m_readout_window_map; 
+  // New buffering
+  struct PendingTD {
+    std::vector <triggeralgs::TriggerCandidate> m_contributing_tcs;
+    int64_t m_readout_start;
+    int64_t m_readout_end;
+    int64_t m_walltime_expiration;
+  };
+  std::vector <PendingTD> m_pending_tds;
+  std::vector <PendingTD> m_ready_tds;
+  std::vector <PendingTD> m_sent_tds;
+  void add_tc(const triggeralgs::TriggerCandidate& tc);
+  void add_td(const PendingTD& m_pending_td);
+  void call_tc_decision(const PendingTD& m_pending_td, bool override_flag=false);
+  bool check_overlap(const triggeralgs::TriggerCandidate& tc, const PendingTD& m_pending_td);
+  bool check_overlap_td(const PendingTD& m_pending_td);
+  std::vector <PendingTD> get_ready_tds(std::vector <PendingTD>& pending_tds);
+  std::map<uint32_t, std::pair<triggeralgs::timestamp_t, triggeralgs::timestamp_t>> m_readout_window_map;
+  int64_t m_buffer_timeout;
   std::atomic<bool> m_td_out_of_timeout;
-  std::atomic<bool> m_td_out_of_timeout_flag;
-  int m_buffer_timeout;
-  int m_readout_before;
-  int m_readout_after;
-  int64_t m_readout_start;
-  int64_t m_readout_end;
-  int64_t m_endtime;
-  int64_t m_previous_endtime;
-  std::vector<triggeralgs::TriggerCandidate> m_tc_loop;
-  void process_tc(const triggeralgs::TriggerCandidate& tc);
-  void set_readout_window(const triggeralgs::TriggerCandidate& tc);
-  void update_readout_window(const triggeralgs::TriggerCandidate& tc);
-  void set_endtime();
-  bool create_decision_check();
-  void clean_tc_queue();
-  void check_overlap(const triggeralgs::TriggerCandidate& tc);
+  int64_t m_timestamp_now;
+
+  // Create the next trigger decision
+  dfmessages::TriggerDecision create_decision(const PendingTD& m_pending_td);
+  dfmessages::trigger_type_t m_trigger_type_shifted;
 
   // Opmon variables
   using metric_counter_type = decltype(moduleleveltriggerinfo::Info::tc_received_count);
