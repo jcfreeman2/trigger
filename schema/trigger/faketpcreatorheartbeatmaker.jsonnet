@@ -10,6 +10,8 @@ local types = {
       doc="Interval between subsequent heartbeats being issued."),
     s.field("clock_frequency_hz", self.ticks,
       doc="Clock frequency in Hz"),
+    s.field("heartbeat_send_offset_ms", self.ticks,
+      doc="How many milliseconds behind the estimated time should we send heartbeats for"),
     
   ], doc="FakeTPCreatorHeartbeatMaker configuration parameters."),
 
