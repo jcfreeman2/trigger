@@ -47,11 +47,15 @@ private:
   void do_scrap(const nlohmann::json& obj);
   void do_work(std::atomic<bool>&);
 
-  bool should_send_heartbeat(daqdataformats::timestamp_t last_sent_heartbeat_time,
-                             daqdataformats::timestamp_t current_tpset_start_time,
-                             bool is_first_tpset_received);
-  void get_heartbeat(TPSet& tpset_heartbeat, daqdataformats::timestamp_t const& current_tpset_start_time);
+  daqdataformats::timestamp_t get_timestamp_lower_bound() const;
 
+  // Get all the TPSets that should be sent for timestamps between
+  // `last_sent_timestamp` and `timestamp_now`, with the given
+  // `heartbeat_interval`
+  std::vector<TPSet> get_heartbeat_sets(daqdataformats::timestamp_t last_sent_timestamp,
+                                        daqdataformats::timestamp_t timestamp_now,
+                                        dunedaq::trigger::faketpcreatorheartbeatmaker::ticks heartbeat_interval) const;
+  
   dunedaq::utilities::WorkerThread m_thread;
 
   using source_t = dunedaq::iomanager::ReceiverConcept<TPSet>;
@@ -60,7 +64,9 @@ private:
   std::shared_ptr<sink_t> m_output_queue;
 
   std::chrono::milliseconds m_queue_timeout;
-
+  daqdataformats::timestamp_t m_last_seen_timestamp;
+  std::chrono::steady_clock::time_point m_last_seen_wall_clock;
+  
   dunedaq::trigger::faketpcreatorheartbeatmaker::Conf m_conf;
   
   daqdataformats::run_number_t m_run_number{ daqdataformats::TypeDefaults::s_invalid_run_number };

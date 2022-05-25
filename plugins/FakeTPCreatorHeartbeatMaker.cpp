@@ -11,8 +11,13 @@
 #include "appfwk/DAQModuleHelper.hpp"
 #include "iomanager/IOManager.hpp"
 #include "rcif/cmd/Nljs.hpp"
+#include "trigger/Issues.hpp"
 
+#include <chrono>
+#include <daqdataformats/Types.hpp>
+#include <stdexcept>
 #include <string>
+#include <thread>
 
 namespace dunedaq {
 namespace trigger {
@@ -22,6 +27,7 @@ FakeTPCreatorHeartbeatMaker::FakeTPCreatorHeartbeatMaker(const std::string& name
   , m_input_queue(nullptr)
   , m_output_queue(nullptr)
   , m_queue_timeout(100)
+  , m_last_seen_timestamp(0)
 {
 
   register_command("conf", &FakeTPCreatorHeartbeatMaker::do_conf);
@@ -89,97 +95,129 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
   m_tpset_sent_count.store(0);
   m_heartbeats_sent.store(0);
 
-  bool is_first_tpset_received = true;
-
-  daqdataformats::timestamp_t last_sent_heartbeat_time;
+  daqdataformats::timestamp_t last_sent_set_time = 0;
 
   TPSet::seqno_t sequence_number = 0;
+
+  auto start_time = std::chrono::steady_clock::now();
   
   while (true) {
-    TPSet tpset;
+    TPSet payload_tpset;
+    bool got_payload = false;
     try {
-      tpset = m_input_queue->receive(m_queue_timeout);
+      payload_tpset = m_input_queue->receive(std::chrono::milliseconds(0));
       m_tpset_received_count++;
+      got_payload = true;
+
+      if (payload_tpset.start_time < last_sent_set_time) {
+        ers::warning(trigger::EarlyPayloadTPSet(ERS_HERE, get_name(), last_sent_set_time, payload_tpset.start_time));
+      }
+      
+      m_last_seen_timestamp = payload_tpset.start_time;
+      m_last_seen_wall_clock = std::chrono::steady_clock::now();
       if (m_geoid.region_id == daqdataformats::GeoID::s_invalid_region_id) {
-        m_geoid = tpset.origin;
+        m_geoid = payload_tpset.origin;
       }
     } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
       if (!running_flag.load()) {
         break;
-      } else {
-        continue;
       }
     }
 
-    TLOG_DEBUG(3) << "Activity received.";
+    daqdataformats::timestamp_t timestamp_now = get_timestamp_lower_bound();
+    if (timestamp_now == 0) {
+      // We haven't received any inputs yet, so we don't send any heartbeats
+      continue;
+    }
+    daqdataformats::timestamp_t offset_ticks = m_conf.clock_frequency_hz*m_conf.heartbeat_send_offset_ms/1000;
+    daqdataformats::timestamp_t a = timestamp_now > offset_ticks ? (timestamp_now - offset_ticks) : 0;
+    daqdataformats::timestamp_t timestamp_for_heartbeats = std::max(a, m_last_seen_timestamp);
+    std::vector<TPSet> output_sets;
+    // If last_sent_set_time is zero, don't try to get heartbeats,
+    // otherwise we try to generate all of the heartbeats since the
+    // start of time
+    if (last_sent_set_time != 0) {
+      output_sets = get_heartbeat_sets(last_sent_set_time, timestamp_for_heartbeats, m_conf.heartbeat_interval);
+    }
 
-    daqdataformats::timestamp_t current_tpset_start_time = tpset.start_time;
-
-    bool send_heartbeat =
-      should_send_heartbeat(last_sent_heartbeat_time, current_tpset_start_time, is_first_tpset_received);
-
-    if (send_heartbeat) {
-      TPSet tpset_heartbeat;
-      get_heartbeat(tpset_heartbeat, current_tpset_start_time);
-      tpset_heartbeat.seqno = sequence_number;
+    // The payload always goes _after_ the heartbeats, which have start_times <= to it
+    if (got_payload) {
+      output_sets.push_back(payload_tpset);
+    }
+    
+    for(auto& output_set : output_sets) {
+      output_set.seqno = sequence_number;
       ++sequence_number;
+      if (output_set.start_time < last_sent_set_time) {
+        throw std::logic_error("foo");
+      }
+      last_sent_set_time = output_set.start_time;
       try {
-        m_output_queue->send(std::move(tpset_heartbeat), m_queue_timeout);
-        m_heartbeats_sent++;
-        last_sent_heartbeat_time = current_tpset_start_time;
-        is_first_tpset_received = false;
+        bool is_payload = (output_set.type == TPSet::kPayload);
+        m_output_queue->send(std::move(output_set), m_queue_timeout);
+        if (is_payload) {
+          ++m_tpset_sent_count;
+        }
+        else {
+          ++m_heartbeats_sent;
+        }
       } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
         std::ostringstream oss_warn;
         oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
         ers::warning(
                      dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
       }
+    } // end loop over heartbeats
+    
+    if (!got_payload) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
-    tpset.seqno = sequence_number;
-    ++sequence_number;
+  } // while (true)
 
-    try {
-      m_output_queue->send(std::move(tpset), m_queue_timeout);
-      m_tpset_sent_count++;
-    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
-      std::ostringstream oss_warn;
-      oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
-      ers::warning(dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
-    }
+  auto end_time = std::chrono::steady_clock::now();
+  auto run_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+  TLOG() << get_name() << ": Ran for " << run_ms << "ms. Received " << m_tpset_received_count << " and sent " << m_tpset_sent_count << " real TPSets. Sent "
+         << m_heartbeats_sent << " fake heartbeats.";
+}
+
+daqdataformats::timestamp_t
+FakeTPCreatorHeartbeatMaker::get_timestamp_lower_bound() const
+{
+  if (m_last_seen_timestamp == 0) return 0;
+
+  using namespace std::chrono;
+
+  auto us_since_last_seen = duration_cast<microseconds>(steady_clock::now() - m_last_seen_wall_clock).count();
+  return m_last_seen_timestamp + (m_conf.clock_frequency_hz * us_since_last_seen / 1000000);
+}
+
+std::vector<TPSet>
+FakeTPCreatorHeartbeatMaker::get_heartbeat_sets(daqdataformats::timestamp_t last_sent_timestamp,
+                                                daqdataformats::timestamp_t timestamp_now,
+                                                dunedaq::trigger::faketpcreatorheartbeatmaker::ticks heartbeat_interval) const
+{
+  TLOG_DEBUG(3) << get_name() << ": get_heartbeat_sets with last_sent_timestamp = " << last_sent_timestamp << ", timestamp_now = " << timestamp_now << ", heartbeat_interval = " << heartbeat_interval;
+  std::vector<TPSet> ret;
+  // Round up last_sent_timestamp to the next multiple of heartbeat_interval
+  daqdataformats::timestamp_t next_heartbeat = (last_sent_timestamp/heartbeat_interval + 1) * heartbeat_interval;
+  
+  while (next_heartbeat <= timestamp_now) {
+    TPSet tpset;
+    tpset.type = TPSet::Type::kHeartbeat;
+    tpset.start_time = next_heartbeat;
+    tpset.end_time = next_heartbeat;
+    tpset.run_number = m_run_number;
+    tpset.origin = m_geoid;
+
+    ret.push_back(tpset);
+
+    next_heartbeat += heartbeat_interval;
   }
 
-  TLOG() << "Received " << m_tpset_received_count << " and sent " << m_tpset_sent_count << " real TPSets. Sent "
-         << m_heartbeats_sent << " fake heartbeats." << std::endl;
-  TLOG_DEBUG(2) << "Exiting do_work() method";
-}
-
-bool
-FakeTPCreatorHeartbeatMaker::should_send_heartbeat(daqdataformats::timestamp_t last_sent_heartbeat_time,
-                                                   daqdataformats::timestamp_t current_tpset_start_time,
-                                                   bool is_first_tpset_received)
-{
-  // If it is the first TPSet received, send out a heartbeat.
-  // Else, can assume that the TPSets are already ordered by start_time. Therefore, check only
-  // that the difference between the start_time of the current TPSet and the time that the
-  // last heartbeat was sent out is greater than the specified heartbeat interval.
-  if (is_first_tpset_received)
-    return true;
-  else
-    return last_sent_heartbeat_time + m_conf.heartbeat_interval < current_tpset_start_time;
-}
-
-void
-FakeTPCreatorHeartbeatMaker::get_heartbeat(TPSet& tpset_heartbeat,
-                                           daqdataformats::timestamp_t const& current_tpset_start_time)
-{
-  tpset_heartbeat.type = TPSet::Type::kHeartbeat;
-  tpset_heartbeat.start_time = current_tpset_start_time;
-  tpset_heartbeat.end_time = current_tpset_start_time;
-  tpset_heartbeat.run_number = m_run_number;
-  tpset_heartbeat.origin = m_geoid;
+  return ret;
 }
 
 } // namespace trigger
