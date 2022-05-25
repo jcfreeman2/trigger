@@ -120,43 +120,34 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
     bool send_heartbeat =
       should_send_heartbeat(last_sent_heartbeat_time, current_tpset_start_time, is_first_tpset_received);
 
-    bool successfully_sent_real_tpset = false;
-    bool successfully_sent_heartbeat = false;
-
     if (send_heartbeat) {
       TPSet tpset_heartbeat;
       get_heartbeat(tpset_heartbeat, current_tpset_start_time);
       tpset_heartbeat.seqno = sequence_number;
       ++sequence_number;
-      while (!successfully_sent_heartbeat) {
-        try {
-          m_output_queue->send(std::move(tpset_heartbeat), m_queue_timeout);
-          successfully_sent_heartbeat = true;
-          m_heartbeats_sent++;
-          last_sent_heartbeat_time = current_tpset_start_time;
-          is_first_tpset_received = false;
-        } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
-          std::ostringstream oss_warn;
-          oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
-          ers::warning(
-            dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
-        }
+      try {
+        m_output_queue->send(std::move(tpset_heartbeat), m_queue_timeout);
+        m_heartbeats_sent++;
+        last_sent_heartbeat_time = current_tpset_start_time;
+        is_first_tpset_received = false;
+      } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
+        std::ostringstream oss_warn;
+        oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
+        ers::warning(
+                     dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
       }
     }
     
     tpset.seqno = sequence_number;
     ++sequence_number;
 
-    while (!successfully_sent_real_tpset) {
-      try {
-        m_output_queue->send(std::move(tpset), m_queue_timeout);
-        successfully_sent_real_tpset = true;
-        m_tpset_sent_count++;
-      } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
-        std::ostringstream oss_warn;
-        oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
-        ers::warning(dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
-      }
+    try {
+      m_output_queue->send(std::move(tpset), m_queue_timeout);
+      m_tpset_sent_count++;
+    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
+      std::ostringstream oss_warn;
+      oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";
+      ers::warning(dunedaq::iomanager::TimeoutExpired(ERS_HERE, get_name(), oss_warn.str(), m_queue_timeout.count()));
     }
   }
 
