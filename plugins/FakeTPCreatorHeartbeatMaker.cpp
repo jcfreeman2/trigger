@@ -157,9 +157,9 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
 }
 
 bool
-FakeTPCreatorHeartbeatMaker::should_send_heartbeat(daqdataformats::timestamp_t const& last_sent_heartbeat_time,
-                                                   daqdataformats::timestamp_t const& current_tpset_start_time,
-                                                   bool const& is_first_tpset_received)
+FakeTPCreatorHeartbeatMaker::should_send_heartbeat(daqdataformats::timestamp_t last_sent_heartbeat_time,
+                                                   daqdataformats::timestamp_t current_tpset_start_time,
+                                                   bool is_first_tpset_received)
 {
   // If it is the first TPSet received, send out a heartbeat.
   // Else, can assume that the TPSets are already ordered by start_time. Therefore, check only

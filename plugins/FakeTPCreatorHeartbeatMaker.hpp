@@ -47,9 +47,9 @@ private:
   void do_scrap(const nlohmann::json& obj);
   void do_work(std::atomic<bool>&);
 
-  bool should_send_heartbeat(daqdataformats::timestamp_t const& last_sent_heartbeat_time,
-                             daqdataformats::timestamp_t const& current_tpset_start_time,
-                             bool const& is_first_tpset_received);
+  bool should_send_heartbeat(daqdataformats::timestamp_t last_sent_heartbeat_time,
+                             daqdataformats::timestamp_t current_tpset_start_time,
+                             bool is_first_tpset_received);
   void get_heartbeat(TPSet& tpset_heartbeat, daqdataformats::timestamp_t const& current_tpset_start_time);
 
   dunedaq::utilities::WorkerThread m_thread;
