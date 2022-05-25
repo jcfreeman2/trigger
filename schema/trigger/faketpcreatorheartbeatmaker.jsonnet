@@ -8,6 +8,8 @@ local types = {
   conf : s.record("Conf", [
     s.field("heartbeat_interval", self.ticks, 5000,
       doc="Interval between subsequent heartbeats being issued."),
+    s.field("clock_frequency_hz", self.ticks,
+      doc="Clock frequency in Hz"),
     
   ], doc="FakeTPCreatorHeartbeatMaker configuration parameters."),
 
