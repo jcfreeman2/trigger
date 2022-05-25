@@ -56,7 +56,7 @@ FakeTPCreatorHeartbeatMaker::get_info(opmonlib::InfoCollector& ci, int /*level*/
 void
 FakeTPCreatorHeartbeatMaker::do_conf(const nlohmann::json& conf)
 {
-  m_heartbeat_interval = conf.get<dunedaq::trigger::faketpcreatorheartbeatmaker::Conf>().heartbeat_interval;
+  m_conf = conf.get<dunedaq::trigger::faketpcreatorheartbeatmaker::Conf>();
   TLOG_DEBUG(2) << get_name() + " configured.";
 }
 
@@ -177,7 +177,7 @@ FakeTPCreatorHeartbeatMaker::should_send_heartbeat(daqdataformats::timestamp_t c
   if (is_first_tpset_received)
     return true;
   else
-    return last_sent_heartbeat_time + m_heartbeat_interval < current_tpset_start_time;
+    return last_sent_heartbeat_time + m_conf.heartbeat_interval < current_tpset_start_time;
 }
 
 void

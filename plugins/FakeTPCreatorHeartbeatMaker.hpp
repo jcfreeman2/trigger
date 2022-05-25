@@ -61,8 +61,8 @@ private:
 
   std::chrono::milliseconds m_queue_timeout;
 
-  triggeralgs::timestamp_t m_heartbeat_interval;
-
+  dunedaq::trigger::faketpcreatorheartbeatmaker::Conf m_conf;
+  
   daqdataformats::run_number_t m_run_number{ daqdataformats::TypeDefaults::s_invalid_run_number };
 
   daqdataformats::GeoID m_geoid{
