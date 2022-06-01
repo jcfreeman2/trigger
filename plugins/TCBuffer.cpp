@@ -96,7 +96,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     
     bool popped_anything=false;
     
-    std::optional<triggeralgs::TriggerCandidate> tc = m_input_queue_tcs->receive_noexcept(std::chrono::milliseconds(0));
+    std::optional<triggeralgs::TriggerCandidate> tc = m_input_queue_tcs->try_receive(std::chrono::milliseconds(0));
     if (tc.has_value()) {  
       TLOG_DEBUG(2) << "Got TC with start time " << tc->time_start;
       popped_anything = true;
@@ -104,7 +104,7 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
       ++n_tcs_received;
     }
 
-    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->receive_noexcept(std::chrono::milliseconds(0));
+    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->try_receive(std::chrono::milliseconds(0));
     if (data_request.has_value()) {
       auto& info = data_request->request_information;
       TLOG_DEBUG(2) << "Got data request with component " << info.component << ", window_begin " << info.window_begin << ", window_end " << info.window_end;

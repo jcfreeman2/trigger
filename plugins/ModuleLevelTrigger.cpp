@@ -208,7 +208,7 @@ ModuleLevelTrigger::send_trigger_decisions()
   auto td_sender = get_iom_sender<dfmessages::TriggerDecision>(m_trigger_decision_connection);
 
   while (true) {
-    std::optional<triggeralgs::TriggerCandidate> tc = m_candidate_source->receive_noexcept(std::chrono::milliseconds(100));
+    std::optional<triggeralgs::TriggerCandidate> tc = m_candidate_source->try_receive(std::chrono::milliseconds(100));
     if (!tc.has_value()) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue

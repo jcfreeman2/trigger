@@ -97,7 +97,7 @@ void
 TPChannelFilter::do_work(std::atomic<bool>& running_flag)
 {
   while (true) {
-    std::optional<TPSet> tpset = m_input_queue->receive_noexcept(m_queue_timeout);;
+    std::optional<TPSet> tpset = m_input_queue->try_receive(m_queue_timeout);;
 
     if (!tpset.has_value()) {
       // The condition to exit the loop is that we've been stopped and

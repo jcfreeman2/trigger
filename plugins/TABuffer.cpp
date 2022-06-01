@@ -93,7 +93,7 @@ TABuffer::do_work(std::atomic<bool>& running_flag)
   while (running_flag.load()) {
 
     bool popped_anything=false;
-    std::optional<TASet> taset = m_input_queue_tas->receive_noexcept(std::chrono::milliseconds(0));
+    std::optional<TASet> taset = m_input_queue_tas->try_receive(std::chrono::milliseconds(0));
     if (taset.has_value()) {
       popped_anything = true;
       for (auto const& ta: taset->objects) {
@@ -102,7 +102,7 @@ TABuffer::do_work(std::atomic<bool>& running_flag)
       }
     }
 
-    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->receive_noexcept(std::chrono::milliseconds(0));
+    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->try_receive(std::chrono::milliseconds(0));
     if (data_request.has_value()) {
       popped_anything = true;
       ++n_requests_received;

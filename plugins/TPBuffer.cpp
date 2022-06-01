@@ -94,7 +94,7 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
     
     bool popped_anything=false;
     
-    std::optional<TPSet> tpset = m_input_queue_tps->receive_noexcept(std::chrono::milliseconds(0));
+    std::optional<TPSet> tpset = m_input_queue_tps->try_receive(std::chrono::milliseconds(0));
     if (tpset.has_value()) {
       popped_anything = true;
       for (auto const& tp: tpset->objects) {
@@ -103,7 +103,7 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
       }
     }
 
-    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->receive_noexcept(std::chrono::milliseconds(0));
+    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->try_receive(std::chrono::milliseconds(0));
     if (data_request.has_value()) {
       popped_anything = true;
       ++n_requests_received;
