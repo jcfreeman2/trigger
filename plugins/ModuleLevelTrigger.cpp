@@ -209,7 +209,7 @@ ModuleLevelTrigger::send_trigger_decisions()
 
   while (true) {
     std::optional<triggeralgs::TriggerCandidate> tc = m_candidate_source->receive_noexcept(std::chrono::milliseconds(100));
-    if (tc.has_value()) {
+    if (!tc.has_value()) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
       if (!m_running_flag.load()) {
