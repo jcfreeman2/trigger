@@ -96,14 +96,8 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
   TPSet::seqno_t sequence_number = 0;
   
   while (true) {
-    TPSet tpset;
-    try {
-      tpset = m_input_queue->receive(m_queue_timeout);
-      m_tpset_received_count++;
-      if (m_geoid.region_id == daqdataformats::GeoID::s_invalid_region_id) {
-        m_geoid = tpset.origin;
-      }
-    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
+    std::optional<TPSet> tpset = m_input_queue->try_receive(m_queue_timeout);
+    if(!tpset.has_value()){
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
       if (!running_flag.load()) {
@@ -113,9 +107,14 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
       }
     }
 
+    // We got a TPSet
+    m_tpset_received_count++;
+    if (m_geoid.region_id == daqdataformats::GeoID::s_invalid_region_id) {
+      m_geoid = tpset->origin;
+    }
     TLOG_DEBUG(3) << "Activity received.";
 
-    daqdataformats::timestamp_t current_tpset_start_time = tpset.start_time;
+    daqdataformats::timestamp_t current_tpset_start_time = tpset->start_time;
 
     bool send_heartbeat =
       should_send_heartbeat(last_sent_heartbeat_time, current_tpset_start_time, is_first_tpset_received);
@@ -144,12 +143,12 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
       }
     }
     
-    tpset.seqno = sequence_number;
+    tpset->seqno = sequence_number;
     ++sequence_number;
 
     while (!successfully_sent_real_tpset) {
       try {
-        m_output_queue->send(std::move(tpset), m_queue_timeout);
+        m_output_queue->send(std::move(*tpset), m_queue_timeout);
         successfully_sent_real_tpset = true;
         m_tpset_sent_count++;
       } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {

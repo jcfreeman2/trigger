@@ -208,11 +208,8 @@ ModuleLevelTrigger::send_trigger_decisions()
   auto td_sender = get_iom_sender<dfmessages::TriggerDecision>(m_trigger_decision_connection);
 
   while (true) {
-    triggeralgs::TriggerCandidate tc;
-    try {
-      tc = m_candidate_source->receive(std::chrono::milliseconds(100));
-      ++m_tc_received_count;
-    } catch (iomanager::TimeoutExpired&) {
+    std::optional<triggeralgs::TriggerCandidate> tc = m_candidate_source->try_receive(std::chrono::milliseconds(100));
+    if (!tc.has_value()) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
       if (!m_running_flag.load()) {
@@ -222,13 +219,16 @@ ModuleLevelTrigger::send_trigger_decisions()
       }
     }
 
+    // We got a TC
+    ++m_tc_received_count;
+
     if (!m_paused.load() && !m_dfo_is_busy.load()) {
 
-      dfmessages::TriggerDecision decision = create_decision(tc);
+      dfmessages::TriggerDecision decision = create_decision(*tc);
 
       TLOG_DEBUG(1) << "Sending a decision with triggernumber " << decision.trigger_number << " timestamp "
                     << decision.trigger_timestamp << " number of links " << decision.components.size()
-                    << " based on TC of type " << static_cast<std::underlying_type_t<decltype(tc.type)>>(tc.type);
+                    << " based on TC of type " << static_cast<std::underlying_type_t<decltype(tc->type)>>(tc->type);
 
       try {
         td_sender->send(std::move(decision), std::chrono::milliseconds(1));
@@ -236,7 +236,7 @@ ModuleLevelTrigger::send_trigger_decisions()
         m_last_trigger_number++;
       } catch (const ers::Issue& e) {
         ers::error(e);
-        TLOG_DEBUG(1) << "The network is misbehaving: it accepted TD but the send failed for " << tc.time_candidate;
+        TLOG_DEBUG(1) << "The network is misbehaving: it accepted TD but the send failed for " << tc->time_candidate;
         m_td_queue_timeout_expired_err_count++;
       }
 
@@ -245,7 +245,7 @@ ModuleLevelTrigger::send_trigger_decisions()
       TLOG_DEBUG(1) << "Triggers are paused. Not sending a TriggerDecision ";
     } else {
       ers::warning(TriggerInhibited(ERS_HERE, m_run_number));
-      TLOG_DEBUG(1) << "The DFO is busy. Not sending a TriggerDecision for candidate timestamp " << tc.time_candidate;
+      TLOG_DEBUG(1) << "The DFO is busy. Not sending a TriggerDecision for candidate timestamp " << tc->time_candidate;
       m_td_inhibited_count++;
     }
     m_td_total_count++;

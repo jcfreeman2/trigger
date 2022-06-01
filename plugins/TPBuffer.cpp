@@ -94,24 +94,20 @@ TPBuffer::do_work(std::atomic<bool>& running_flag)
     
     bool popped_anything=false;
     
-    try {
-      TPSet tpset = m_input_queue_tps->receive(std::chrono::milliseconds(0));
+    std::optional<TPSet> tpset = m_input_queue_tps->try_receive(std::chrono::milliseconds(0));
+    if (tpset.has_value()) {
       popped_anything = true;
-      for (auto const& tp: tpset.objects) {
+      for (auto const& tp: tpset->objects) {
         m_latency_buffer_impl->write(TPWrapper(tp));
         ++n_tps_received;
       }
-    } catch (const iomanager::TimeoutExpired&) {
-      // It's fine if there was no new input
     }
 
-    try {
-      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(0));
+    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->try_receive(std::chrono::milliseconds(0));
+    if (data_request.has_value()) {
       popped_anything = true;
       ++n_requests_received;
-      m_request_handler_impl->issue_request(data_request, false);
-    } catch (const iomanager::TimeoutExpired&) {
-      // It's fine if there was no new input
+      m_request_handler_impl->issue_request(*data_request, false);
     }
 
     if (!popped_anything) {

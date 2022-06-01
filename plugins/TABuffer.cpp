@@ -89,29 +89,24 @@ TABuffer::do_work(std::atomic<bool>& running_flag)
 {
   size_t n_tas_received = 0;
   size_t n_requests_received = 0;
-  
+
   while (running_flag.load()) {
-    
+
     bool popped_anything=false;
-    
-    try {
-      TASet taset = m_input_queue_tas->receive(std::chrono::milliseconds(0));
+    std::optional<TASet> taset = m_input_queue_tas->try_receive(std::chrono::milliseconds(0));
+    if (taset.has_value()) {
       popped_anything = true;
-      for (auto const& ta: taset.objects) {
+      for (auto const& ta: taset->objects) {
         m_latency_buffer_impl->write(TAWrapper(ta));
         ++n_tas_received;
       }
-    } catch (const iomanager::TimeoutExpired&) {
-      // It's fine if there was no new input
     }
 
-    try {
-      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(0));
+    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->try_receive(std::chrono::milliseconds(0));
+    if (data_request.has_value()) {
       popped_anything = true;
       ++n_requests_received;
-      m_request_handler_impl->issue_request(data_request, false);
-    } catch (const iomanager::TimeoutExpired&) {
-      // It's fine if there was no new input
+      m_request_handler_impl->issue_request(*data_request, false);
     }
 
     if (!popped_anything) {

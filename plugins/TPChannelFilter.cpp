@@ -97,10 +97,9 @@ void
 TPChannelFilter::do_work(std::atomic<bool>& running_flag)
 {
   while (true) {
-    TPSet tpset;
-    try {
-      tpset = m_input_queue->receive(m_queue_timeout);
-    } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
+    std::optional<TPSet> tpset = m_input_queue->try_receive(m_queue_timeout);;
+
+    if (!tpset.has_value()) {
       // The condition to exit the loop is that we've been stopped and
       // there's nothing left on the input queue
       if (!running_flag.load()) {
@@ -110,22 +109,24 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
       }
     }
 
+    // If we got here, we got a TPSet
+    
     // Actually do the removal for payload TPSets. Leave heartbeat TPSets unmolested
 
-    if (tpset.type == TPSet::kPayload) {
-      size_t n_before = tpset.objects.size();
-      auto it = std::remove_if(tpset.objects.begin(), tpset.objects.end(), [this](triggeralgs::TriggerPrimitive p) {
+    if (tpset->type == TPSet::kPayload) {
+      size_t n_before = tpset->objects.size();
+      auto it = std::remove_if(tpset->objects.begin(), tpset->objects.end(), [this](triggeralgs::TriggerPrimitive p) {
         return channel_should_be_removed(p.channel);
       });
-      tpset.objects.erase(it, tpset.objects.end());
-      size_t n_after = tpset.objects.size();
+      tpset->objects.erase(it, tpset->objects.end());
+      size_t n_after = tpset->objects.size();
       TLOG_DEBUG(2) << "Removed " << (n_before - n_after) << " TPs out of " << n_before;
     }
 
     // The rule is that we don't send empty TPSets, so ensure that
-    if (!tpset.objects.empty()) {
+    if (!tpset->objects.empty()) {
       try {
-        m_output_queue->send(std::move(tpset), m_queue_timeout);
+        m_output_queue->send(std::move(*tpset), m_queue_timeout);
       } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
         std::ostringstream oss_warn;
         oss_warn << "push to output queue \"" << m_output_queue->get_name() << "\"";

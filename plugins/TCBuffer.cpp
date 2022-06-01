@@ -96,25 +96,21 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
     
     bool popped_anything=false;
     
-    try {
-      triggeralgs::TriggerCandidate tc = m_input_queue_tcs->receive(std::chrono::milliseconds(0));
-      TLOG_DEBUG(2) << "Got TC with start time " << tc.time_start;
+    std::optional<triggeralgs::TriggerCandidate> tc = m_input_queue_tcs->try_receive(std::chrono::milliseconds(0));
+    if (tc.has_value()) {  
+      TLOG_DEBUG(2) << "Got TC with start time " << tc->time_start;
       popped_anything = true;
-      m_latency_buffer_impl->write(TCWrapper(tc));
+      m_latency_buffer_impl->write(TCWrapper(*tc));
       ++n_tcs_received;
-    } catch (const iomanager::TimeoutExpired&) {
-      // It's fine if there was no new input
     }
 
-    try {
-      dfmessages::DataRequest data_request = m_input_queue_dr->receive(std::chrono::milliseconds(0));
-      auto& info = data_request.request_information;
+    std::optional<dfmessages::DataRequest> data_request = m_input_queue_dr->try_receive(std::chrono::milliseconds(0));
+    if (data_request.has_value()) {
+      auto& info = data_request->request_information;
       TLOG_DEBUG(2) << "Got data request with component " << info.component << ", window_begin " << info.window_begin << ", window_end " << info.window_end;
       popped_anything = true;
       ++n_requests_received;
-      m_request_handler_impl->issue_request(data_request, false);
-    } catch (const iomanager::TimeoutExpired&) {
-      // It's fine if there was no new input
+      m_request_handler_impl->issue_request(*data_request, false);
     }
 
     if (!popped_anything) {

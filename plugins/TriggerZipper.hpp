@@ -171,10 +171,12 @@ public:
   {
     m_cache.emplace_front(); // to be filled
     auto& tset = m_cache.front();
-    try {
-      tset = m_inq->receive(std::chrono::milliseconds(10));
+    std::optional<TSET> opt_tset= m_inq->try_receive(std::chrono::milliseconds(10));
+    if (opt_tset.has_value()) {
+      tset = *opt_tset;
       ++m_n_received;
-    } catch (iomanager::TimeoutExpired&) {
+    }
+    else {
       m_cache.pop_front(); // vestigial
       drain();
       return false;
