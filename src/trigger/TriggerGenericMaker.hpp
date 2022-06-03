@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace dunedaq::trigger {
@@ -284,7 +285,8 @@ public: // NOLINT
         }
         m_prev_start_time = in.start_time;
         std::vector<A> time_slice;
-        daqdataformats::timestamp_t start_time, end_time;
+        daqdataformats::timestamp_t start_time = 0;
+	daqdataformats::timestamp_t end_time = 0;
         if (!m_in_buffer.buffer(in, time_slice, start_time, end_time)) {
           return; // no complete time slice yet (`in` was part of buffered slice)
         }
@@ -299,7 +301,8 @@ public: // NOLINT
         // appropriately
 
         std::vector<A> time_slice;
-        daqdataformats::timestamp_t start_time, end_time;
+        daqdataformats::timestamp_t start_time = 0;
+	daqdataformats::timestamp_t end_time = 0;
         if (m_in_buffer.flush(time_slice, start_time, end_time)) {
           if (end_time > in.start_time) {
             // This should never happen, but we check here so we at least get some output if it did
@@ -357,7 +360,7 @@ public: // NOLINT
         }
       }
       // Only form and send Set<B> if it has a nonzero number of objects
-      else if (out.type == Set<B>::Type::kPayload && out.objects.size() != 0) {
+      else if (out.type == Set<B>::Type::kPayload && out.objects.size() != 0) { // NOLINT(readability/braces)
         TLOG_DEBUG(4) << "Output set window ready with start time " << out.start_time << " end time " << out.end_time
                       << " and " << out.objects.size() << " members";
         if (!m_parent.send(std::move(out))) {
@@ -374,7 +377,8 @@ public: // NOLINT
     // First, send anything in the input buffer to the algorithm, and add any
     // results to output buffer
     std::vector<A> time_slice;
-    daqdataformats::timestamp_t start_time, end_time;
+    daqdataformats::timestamp_t start_time = 0;
+    daqdataformats::timestamp_t end_time = 0;
     if (m_in_buffer.flush(time_slice, start_time, end_time)) {
       std::vector<B> elems;
       process_slice(time_slice, elems);
@@ -398,7 +402,7 @@ public: // NOLINT
         }
       }
       // Only form and send Set<B> if it has a nonzero number of objects
-      else if (out.type == Set<B>::Type::kPayload && out.objects.size() != 0) {
+      else if (out.type == Set<B>::Type::kPayload && out.objects.size() != 0) { // NOLINT(readability/braces)
         TLOG_DEBUG(1) << "Output set window ready with start time " << out.start_time << " end time " << out.end_time
                       << " and " << out.objects.size() << " members";
         if (!m_parent.send(std::move(out))) {
@@ -450,7 +454,8 @@ public: // NOLINT
     switch (in.type) {
       case Set<A>::Type::kPayload: {
         std::vector<A> time_slice;
-        daqdataformats::timestamp_t start_time, end_time;
+        daqdataformats::timestamp_t start_time = 0;
+	daqdataformats::timestamp_t end_time = 0;
         if (!m_in_buffer.buffer(in, time_slice, start_time, end_time)) {
           return; // no complete time slice yet (`in` was part of buffered slice)
         }
@@ -465,7 +470,8 @@ public: // NOLINT
         // times t < T, because the input is time-ordered
         try {
           std::vector<A> time_slice;
-          daqdataformats::timestamp_t start_time, end_time;
+          daqdataformats::timestamp_t start_time = 0;
+	  daqdataformats::timestamp_t end_time = 0;
           if (m_in_buffer.flush(time_slice, start_time, end_time)) {
             if (end_time > in.start_time) {
               // This should never happen, but we check here so we at least get some output if it did
@@ -499,7 +505,8 @@ public: // NOLINT
     // Send anything in the input buffer to the algorithm, and put any results
     // on the output queue
     std::vector<A> time_slice;
-    daqdataformats::timestamp_t start_time, end_time;
+    daqdataformats::timestamp_t start_time = 0;
+    daqdataformats::timestamp_t end_time = 0;
     if (m_in_buffer.flush(time_slice, start_time, end_time)) {
       std::vector<OUT> out_vec;
       process_slice(time_slice, out_vec);

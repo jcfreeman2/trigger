@@ -34,9 +34,7 @@
 #include <string>
 #include <vector>
 
-namespace dunedaq {
-
-namespace trigger {
+namespace dunedaq::trigger {
 
 /**
  * @brief ModuleLevelTrigger is the last level of the data selection
@@ -84,8 +82,6 @@ private:
 
   std::vector<dfmessages::GeoID> m_links;
 
-  int m_repeat_trigger_count{ 1 };
-
   // paused state, in which we don't send triggers
   std::atomic<bool> m_paused;
   std::atomic<bool> m_dfo_is_busy;
@@ -121,8 +117,7 @@ private:
   std::atomic<metric_counter_type> m_lc_kPaused{ 0 };
   std::atomic<metric_counter_type> m_lc_kDead{ 0 };
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_PLUGINS_MODULELEVELTRIGGER_HPP_
 

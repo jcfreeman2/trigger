@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(TPSet_GeoID_Init_System_Type_Is_DataSelection)
 
 BOOST_AUTO_TEST_CASE(ZipperStreamIDFromGeoID)
 {
-  trigger::TPSet tpset1, tpset2;
+  trigger::TPSet tpset1, tpset2; // NOLINT
 
   tpset1.origin.region_id = 1;
   tpset1.origin.element_id = 1;
@@ -82,13 +82,13 @@ struct TPSetSrc
 };
 
 static void
-pop_must_timeout(receiver_t out)
+pop_must_timeout(const receiver_t& out)
 {
   TLOG() << "Popping assuming a timeout";
   BOOST_CHECK_THROW(out->receive((duration_t)1000), iomanager::TimeoutExpired);
 }
 static trigger::TPSet
-pop_must_succeed(receiver_t out)
+pop_must_succeed(const receiver_t& out)
 {
   TLOG() << "Popping assuming no waiting";
   trigger::TPSet tpset;
@@ -99,10 +99,10 @@ pop_must_succeed(receiver_t out)
 }
 
 static void
-push0(sender_t in, trigger::TPSet tpset)
+push0(const sender_t& in, trigger::TPSet tpset)
 {
   TLOG() << "Pushing " << tpset.origin << " @ " << tpset.start_time;
-  in->send(std::move(tpset), (duration_t)0);
+  in->send(std::move(tpset), static_cast<duration_t>(0));
 }
 
 BOOST_AUTO_TEST_CASE(ZipperScenario1)
@@ -123,10 +123,11 @@ BOOST_AUTO_TEST_CASE(ZipperScenario1)
   zip->set_output("zipper_output");
 
   trigger::TPZipper::cfg_t cfg{ 2, 100, 1, 20 };
-  nlohmann::json jcfg = cfg, jempty;
+  nlohmann::json jcfg = cfg;
+  nlohmann::json jempty;
   zip->do_configure(jcfg);
 
-  TPSetSrc s1{ 1 }, s2{ 2 };
+  TPSetSrc s1{ 1 }, s2{ 2 }; // NOLINT
 
   zip->do_start(jempty);
 

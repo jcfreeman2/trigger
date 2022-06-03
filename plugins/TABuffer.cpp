@@ -11,10 +11,10 @@
 #include "appfwk/DAQModuleHelper.hpp"
 #include "daqdataformats/GeoID.hpp"
 
+#include <memory>
 #include <string>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 TABuffer::TABuffer(const std::string& name)
   : DAQModule(name)
@@ -122,7 +122,6 @@ TABuffer::do_work(std::atomic<bool>& running_flag)
   TLOG() << get_name() << " exiting do_work() method. Received " << n_tas_received << " TAs " << " and " << n_requests_received << " data requests";
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::TABuffer)

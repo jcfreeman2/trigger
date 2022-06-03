@@ -18,8 +18,7 @@
 #include <sstream>
 #include <string>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 TPSetSink::TPSetSink(const std::string& name)
   : DAQModule(name)
@@ -115,7 +114,7 @@ TPSetSink::do_work()
          << " TPSet/s. Inferred clock frequency " << inferred_clock_frequency << "Hz";
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
+
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::TPSetSink)

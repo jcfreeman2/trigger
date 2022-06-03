@@ -15,8 +15,7 @@
 #include <set>
 #include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 /**
  * @brief BufferManager description.
@@ -99,11 +98,11 @@ public:
       return ds_out;
     }
 
-    BSET txset_low, txset_up;
+    BSET txset_low, txset_up; // NOLINT
     txset_low.start_time = start_time;
     txset_up.start_time = end_time;
 
-    typename std::set<BSET, TxSetCmp>::iterator it, it_low, it_up;
+    typename std::set<BSET, TxSetCmp>::iterator it, it_low, it_up; // NOLINT
 
     // checking first and last TxSet of buffer that have a start_time within data request limits
     it_low = m_txset_buffer.lower_bound(txset_low);
@@ -158,7 +157,6 @@ private:
   daqdataformats::timestamp_t m_buffer_latest_end_time;
 };
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_SRC_TRIGGER_BUFFERMANAGER_HPP_

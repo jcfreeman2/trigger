@@ -29,9 +29,7 @@
 #include <string>
 #include <vector>
 
-namespace dunedaq {
-
-namespace trigger {
+namespace dunedaq::trigger {
 
 /**
  * @brief RandomTriggerCandidateMaker creates TriggerCandidates at regular or
@@ -93,7 +91,6 @@ private:
   using metric_counter_type = decltype(randomtriggercandidatemakerinfo::Info::tc_sent_count);
   std::atomic<metric_counter_type> m_tc_sent_count{ 0 };
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_PLUGINS_RANDOMTRIGGERCANDIDATEMAKER_HPP_

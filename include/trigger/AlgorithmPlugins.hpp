@@ -24,15 +24,12 @@
  * @brief Declare the function that will be called by the plugin loader
  * @param klass Class to be defined as a DUNE TAMaker module
  */
-// NOLINTNEXTLINE(build/define_used)
+// NOLINTNEXTLINE
 #define DEFINE_DUNE_TA_MAKER(klass)                                                                                    \
-  extern "C"                                                                                                           \
-  {                                                                                                                    \
     std::shared_ptr<triggeralgs::TriggerActivityMaker> make()                                                          \
     {                                                                                                                  \
       return std::shared_ptr<triggeralgs::TriggerActivityMaker>(new klass());                                            \
-    }                                                                                                                  \
-  }
+    } // NOLINT
 
 namespace dunedaq::trigger {
 /**
@@ -56,15 +53,12 @@ make_ta_maker(std::string const& plugin_name)
  * @brief Declare the function that will be called by the plugin loader
  * @param klass Class to be defined as a DUNE TCMaker module
  */
-// NOLINTNEXTLINE(build/define_used)
+// NOLINTNEXTLINE
 #define DEFINE_DUNE_TC_MAKER(klass)                                                                                    \
-  extern "C"                                                                                                           \
-  {                                                                                                                    \
     std::shared_ptr<triggeralgs::TriggerCandidateMaker> make()                                                         \
     {                                                                                                                  \
       return std::shared_ptr<triggeralgs::TriggerCandidateMaker>(new klass());                                           \
-    }                                                                                                                  \
-  }
+    } // NOLINT
 
 namespace dunedaq::trigger {
 /**
@@ -88,15 +82,12 @@ make_tc_maker(std::string const& plugin_name)
  * @brief Declare the function that will be called by the plugin loader
  * @param klass Class to be defined as a DUNE TDMaker module
  */
-// NOLINTNEXTLINE(build/define_used)
+// NOLINTNEXTLINE
 #define DEFINE_DUNE_TD_MAKER(klass)                                                                                    \
-  extern "C"                                                                                                           \
-  {                                                                                                                    \
     std::shared_ptr<triggeralgs::TriggerDecisionMaker> make()                                                          \
     {                                                                                                                  \
       return std::shared_ptr<triggeralgs::TriggerDecisionMaker>(new klass());                                            \
-    }                                                                                                                  \
-  }
+    } // NOLINT
 
 namespace dunedaq::trigger {
 /**

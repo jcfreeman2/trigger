@@ -14,8 +14,7 @@
 
 #include <string>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 template<class T>
 Tee<T>::Tee(const std::string& name)
@@ -112,6 +111,6 @@ Tee<T>::do_work(std::atomic<bool>& running_flag)
   TLOG() << get_name() << ": Exiting do_work() method after receiving " << n_objects << " objects";
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
+
 

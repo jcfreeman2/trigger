@@ -26,8 +26,7 @@
 #include <unordered_set>
 #include <utility>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 class TPChannelFilter : public dunedaq::appfwk::DAQModule
 {
 public:
@@ -61,7 +60,6 @@ private:
 
   dunedaq::trigger::tpchannelfilter::Conf m_conf;
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_PLUGINS_TPCHANNELFILTER_HPP_

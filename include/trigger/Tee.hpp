@@ -6,16 +6,18 @@
  * received with this code.
  */
 
-#ifndef TRIGGER_PLUGINS_TEE_HPP_
-#define TRIGGER_PLUGINS_TEE_HPP_
+#ifndef TRIGGER_INCLUDE_TRIGGER_TEE_HPP_
+#define TRIGGER_INCLUDE_TRIGGER_TEE_HPP_
 
 #include "appfwk/DAQModule.hpp"
 #include "iomanager/Receiver.hpp"
 #include "iomanager/Sender.hpp"
 #include "utilities/WorkerThread.hpp"
 
-namespace dunedaq {
-namespace trigger {
+#include <memory>
+#include <string>
+
+namespace dunedaq::trigger {
 template<class T>
 class Tee : public dunedaq::appfwk::DAQModule
 {
@@ -45,9 +47,8 @@ private:
   std::shared_ptr<sink_t> m_output_queue2;
 
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #include "Tee.hxx"
 
-#endif // TRIGGER_PLUGINS_TEE_HPP_
+#endif // TRIGGER_INCLUDE_TRIGGER_TEE_HPP_

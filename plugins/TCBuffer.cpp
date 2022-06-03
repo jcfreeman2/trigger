@@ -13,10 +13,10 @@
 #include "daqdataformats/GeoID.hpp"
 
 #include <chrono>
+#include <memory>
 #include <string>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 TCBuffer::TCBuffer(const std::string& name)
   : DAQModule(name)
@@ -124,7 +124,6 @@ TCBuffer::do_work(std::atomic<bool>& running_flag)
 
   TLOG() << get_name() << " exiting do_work() method. Received " << n_tcs_received << " TCs " << " and " << n_requests_received << " data requests";
 }
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::TCBuffer)

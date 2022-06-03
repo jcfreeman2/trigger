@@ -79,7 +79,8 @@ main(int argc, char** argv)
     // they're the same for now, because matching up the component
     // request to the fragment is too difficult
     size_t n_requests = record.header->get_num_requested_components();
-    dunedaq::daqdataformats::timestamp_t window_begin = 0, window_end = 0;
+    dunedaq::daqdataformats::timestamp_t window_begin = 0;
+    dunedaq::daqdataformats::timestamp_t window_end = 0;
     for (size_t i = 0; i < n_requests; ++i) {
       auto request = record.header->at(i);
       if (request.component.system_type == dunedaq::daqdataformats::GeoID::SystemType::kDataSelection) {
@@ -96,7 +97,7 @@ main(int argc, char** argv)
       const size_t n_prim =
         (frag->get_size() - sizeof(dunedaq::daqdataformats::FragmentHeader)) / sizeof(TriggerPrimitive);
       std::cout << "  Fragment has " << n_prim << " primitives" << std::endl;
-      const TriggerPrimitive* prim = reinterpret_cast<TriggerPrimitive*>(frag->get_data());
+      auto prim = reinterpret_cast<const TriggerPrimitive*>(frag->get_data()); // NOLINT
       for (size_t i = 0; i < n_prim; ++i) {
         if (prim->time_start < window_begin || prim->time_start > window_end) {
           std::cout << "Primitive with time_start " << prim->time_start << " is outside request window of ("

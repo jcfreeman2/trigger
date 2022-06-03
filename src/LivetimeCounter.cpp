@@ -1,8 +1,18 @@
+/**
+ * @file LivetimeCounter.cpp
+ *
+ * This is part of the DUNE DAQ Application Framework, copyright 2022.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+
 #include "trigger/LivetimeCounter.hpp"
 
 #include "logging/Logging.hpp"
 
+#include <map>
 #include <sstream>
+#include <string>
 
 namespace dunedaq::trigger {
 

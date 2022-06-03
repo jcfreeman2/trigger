@@ -23,8 +23,7 @@
 #include <string>
 #include <thread>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 /**
  * @brief TokenManager keeps track of the number of in-flight trigger decisions.
@@ -48,9 +47,9 @@ public:
   virtual ~TokenManager();
 
   TokenManager(TokenManager const&) = delete;
-  TokenManager(TokenManager&&) = default;
+  TokenManager(TokenManager&&) = delete;
   TokenManager& operator=(TokenManager const&) = delete;
-  TokenManager& operator=(TokenManager&&) = default;
+  TokenManager& operator=(TokenManager&&) = delete;
 
   /**
    *  Get the number of available tokens
@@ -78,8 +77,6 @@ private:
 
   std::string m_connection_name;
 
-  // Are we running?
-  std::atomic<bool> m_running_flag;
   // How many tokens are currently available?
   std::atomic<int> m_n_tokens;
 
@@ -97,7 +94,6 @@ private:
   std::shared_ptr<iomanager::ReceiverConcept<dfmessages::TriggerDecisionToken>> m_token_receiver;
 };
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_SRC_TRIGGER_TOKENMANAGER_HPP_

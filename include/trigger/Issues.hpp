@@ -18,14 +18,17 @@
 #include <string>
 #include <bitset>
 
-// NOLINTNEXTLINE(build/define_used)
-#define TLVL_ENTER_EXIT_METHODS 10
-// NOLINTNEXTLINE(build/define_used)
-#define TLVL_GENERATION 11
-// NOLINTNEXTLINE(build/define_used)
-#define TLVL_CANDIDATE 15
 
 namespace dunedaq {
+
+  namespace trigger {
+
+#undef TLVL_ENTER_EXIT_METHODS   // Some other package #defined this for their own purposes
+    constexpr int TLVL_ENTER_EXIT_METHODS=10;
+    constexpr int TLVL_GENERATION=11;
+    constexpr int TLVL_CANDIDATE=15;
+  } // namespace trigger
+
 
 ERS_DECLARE_ISSUE(trigger, InvalidConfiguration, "An invalid configuration object was received", ERS_EMPTY)
 ERS_DECLARE_ISSUE(trigger, TriggerActive, "Trigger is active now", ERS_EMPTY)

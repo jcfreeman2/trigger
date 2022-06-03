@@ -14,9 +14,9 @@
 
 #include <regex>
 #include <string>
+#include <utility>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 TimingTriggerCandidateMaker::TimingTriggerCandidateMaker(const std::string& name)
   : DAQModule(name)
@@ -172,7 +172,6 @@ TimingTriggerCandidateMaker::get_info(opmonlib::InfoCollector& ci, int /*level*/
   ci.add(i);
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::TimingTriggerCandidateMaker)

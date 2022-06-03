@@ -27,13 +27,15 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <memory>
 #include <pthread.h>
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 RandomTriggerCandidateMaker::RandomTriggerCandidateMaker(const std::string& name)
   : DAQModule(name)
@@ -80,11 +82,11 @@ RandomTriggerCandidateMaker::do_start(const nlohmann::json& obj)
   switch (m_conf.timestamp_method) {
     case randomtriggercandidatemaker::timestamp_estimation::kTimeSync:
       TLOG_DEBUG(0) << "Creating TimestampEstimator";
-      m_timestamp_estimator.reset(new timinglibs::TimestampEstimator(m_time_sync_source, m_conf.clock_frequency_hz));
+      m_timestamp_estimator = std::make_unique<timinglibs::TimestampEstimator>(m_time_sync_source, m_conf.clock_frequency_hz);
       break;
     case randomtriggercandidatemaker::timestamp_estimation::kSystemClock:
       TLOG_DEBUG(0) << "Creating TimestampEstimatorSystem";
-      m_timestamp_estimator.reset(new timinglibs::TimestampEstimatorSystem(m_conf.clock_frequency_hz));
+      m_timestamp_estimator = std::make_unique<timinglibs::TimestampEstimatorSystem>(m_conf.clock_frequency_hz);
       break;
   }
 
@@ -130,10 +132,10 @@ RandomTriggerCandidateMaker::get_interval(std::mt19937& gen)
       TLOG_DEBUG(1) << get_name() << " unknown distribution! Using kUniform.";
       // fall through
     case randomtriggercandidatemaker::distribution_type::kUniform:
-      return m_conf.trigger_interval_ticks;
+      return m_conf.trigger_interval_ticks; 
     case randomtriggercandidatemaker::distribution_type::kPoisson:
       std::exponential_distribution<double> d(1.0 / m_conf.trigger_interval_ticks);
-      return static_cast<int>(0.5 + d(gen));
+      return static_cast<int>(lround(d(gen)));
   }
 }
 
@@ -174,8 +176,7 @@ RandomTriggerCandidateMaker::send_trigger_candidates()
   }
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::RandomTriggerCandidateMaker)
 

@@ -13,9 +13,9 @@
 #include "triggeralgs/TriggerPrimitive.hpp"
 
 #include <string>
+#include <utility>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 TPChannelFilter::TPChannelFilter(const std::string& name)
   : DAQModule(name)
   , m_thread(std::bind(&TPChannelFilter::do_work, this, std::placeholders::_1))
@@ -138,7 +138,6 @@ TPChannelFilter::do_work(std::atomic<bool>& running_flag)
   TLOG_DEBUG(2) << "Exiting do_work() method";
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::TPChannelFilter)

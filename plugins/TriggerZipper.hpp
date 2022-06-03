@@ -29,6 +29,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 const char* inqs_name = "inputs";
@@ -224,7 +225,7 @@ public:
   void send_out(std::vector<node_type>& got)
   {
     for (auto& node : got) {
-      payload_type lit = node.payload;
+      payload_type lit = node.payload; // NOLINT
       auto& tset = *lit; // list iterator
 
       // tell consumer "where" the set was produced

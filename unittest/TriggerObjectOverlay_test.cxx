@@ -72,10 +72,10 @@ BOOST_AUTO_TEST_CASE(TriggerCandidateOverlay_in_out) {
 
   write_overlay(candidate, buffer);
 
-  const TriggerCandidate& candidate_overlay = *reinterpret_cast<const TriggerCandidate*>(buffer);
+  const TriggerCandidate& candidate_overlay = *reinterpret_cast<const TriggerCandidate*>(buffer); // NOLINT
   BOOST_CHECK_EQUAL(candidate.time_start,     candidate_overlay.data.time_start);
   
-  triggeralgs::TriggerCandidate candidate_read = triggeralgs::read_overlay_from_buffer<triggeralgs::TriggerCandidate>(buffer);
+  auto candidate_read = triggeralgs::read_overlay_from_buffer<triggeralgs::TriggerCandidate>(buffer);
 
   BOOST_CHECK_EQUAL(candidate.time_start,     candidate_read.time_start);
   BOOST_CHECK_EQUAL(candidate.time_end,       candidate_read.time_end);
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(TriggerActivityOverlay_in_out) {
 
   write_overlay(activity, buffer);
 
-  triggeralgs::TriggerActivity activity_read = triggeralgs::read_overlay_from_buffer<triggeralgs::TriggerActivity>(buffer);
+  auto activity_read = triggeralgs::read_overlay_from_buffer<triggeralgs::TriggerActivity>(buffer);
 
   BOOST_CHECK_EQUAL(activity.time_start,     activity_read.time_start);
   BOOST_CHECK_EQUAL(activity.time_end,       activity_read.time_end);

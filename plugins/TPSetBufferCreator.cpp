@@ -27,8 +27,7 @@
 #include <utility>
 #include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 TPSetBufferCreator::TPSetBufferCreator(const std::string& name)
   : dunedaq::appfwk::DAQModule(name)
@@ -77,7 +76,7 @@ TPSetBufferCreator::do_configure(const nlohmann::json& obj)
 
   m_tps_buffer_size = m_conf.tpset_buffer_size;
 
-  m_tps_buffer.reset(new TPSetBuffer(m_tps_buffer_size));
+  m_tps_buffer = std::make_unique<TPSetBuffer>(m_tps_buffer_size);
 
   m_tps_buffer->set_buffer_size(m_tps_buffer_size);
 }
@@ -99,7 +98,7 @@ TPSetBufferCreator::do_stop(const nlohmann::json& /*args*/)
   TPSetBuffer::DataRequestOutput requested_tpset;
   if (m_dr_on_hold.size()) { // check if there are still data request on hold
     TLOG() << get_name() << ": On hold DRs: " << m_dr_on_hold.size();
-    std::map<dfmessages::DataRequest, std::vector<trigger::TPSet>>::iterator it = m_dr_on_hold.begin();
+    std::map<dfmessages::DataRequest, std::vector<trigger::TPSet>>::iterator it = m_dr_on_hold.begin(); // NOLINT
     while (it != m_dr_on_hold.end()) {
 
       requested_tpset.txsets_in_window = it->second;
@@ -132,7 +131,7 @@ TPSetBufferCreator::do_scrap(const nlohmann::json& /*args*/)
 }
 
 std::unique_ptr<daqdataformats::Fragment>
-TPSetBufferCreator::convert_to_fragment(std::vector<TPSet>& tpsets, dfmessages::DataRequest input_data_request)
+TPSetBufferCreator::convert_to_fragment(const std::vector<TPSet>& tpsets, const dfmessages::DataRequest& input_data_request)
 {
 
   using detdataformats::trigger::TriggerPrimitive;
@@ -153,11 +152,10 @@ TPSetBufferCreator::convert_to_fragment(std::vector<TPSet>& tpsets, dfmessages::
   // If tps is empty, tps.data() will be nullptr, so we need this `if`
   if(tps.empty()){
     ret = std::make_unique<daqdataformats::Fragment>(std::vector<std::pair<void*, size_t>>());
-  }
-  else{
+  } else {
     ret = std::make_unique<daqdataformats::Fragment>(tps.data(), sizeof(TriggerPrimitive)*tps.size());
   }
-  auto& frag = *ret.get();
+  auto& frag = *ret;
 
   daqdataformats::GeoID geoid(daqdataformats::GeoID::SystemType::kDataSelection, m_conf.region, m_conf.element);
   daqdataformats::FragmentHeader frag_h;
@@ -167,7 +165,7 @@ TPSetBufferCreator::convert_to_fragment(std::vector<TPSet>& tpsets, dfmessages::
   frag_h.window_end = input_data_request.request_information.window_end;
   frag_h.run_number = input_data_request.run_number;
   frag_h.element_id = geoid;
-  frag_h.fragment_type = (daqdataformats::fragment_type_t)daqdataformats::FragmentType::kTriggerPrimitives;
+  frag_h.fragment_type = static_cast<daqdataformats::fragment_type_t>(daqdataformats::FragmentType::kTriggerPrimitives);
   frag_h.sequence_number = input_data_request.sequence_number;
 
   frag.set_header_fields(frag_h);
@@ -177,7 +175,7 @@ TPSetBufferCreator::convert_to_fragment(std::vector<TPSet>& tpsets, dfmessages::
 
 void
 TPSetBufferCreator::send_out_fragment(std::unique_ptr<daqdataformats::Fragment> frag_out,
-                                      std::string data_destination,
+                                      const std::string& data_destination,
                                       size_t& sentCount,
                                       std::atomic<bool>& running_flag)
 {
@@ -202,7 +200,7 @@ TPSetBufferCreator::send_out_fragment(std::unique_ptr<daqdataformats::Fragment> 
 }
 
 void
-TPSetBufferCreator::send_out_fragment(std::unique_ptr<daqdataformats::Fragment> frag_out, std::string data_destination)
+TPSetBufferCreator::send_out_fragment(std::unique_ptr<daqdataformats::Fragment> frag_out, const std::string& data_destination)
 {
   std::string thisQueueName = m_output_queue_frag->get_name();
   bool successfullyWasSent = false;
@@ -351,8 +349,7 @@ TPSetBufferCreator::do_work(std::atomic<bool>& running_flag)
 
 } // NOLINT Function length
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::TPSetBufferCreator)
 

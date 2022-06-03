@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace dunedaq::trigger {
 
@@ -23,7 +24,7 @@ TokenManager::TokenManager(const std::string& connection_name,
   : m_connection_name(connection_name)
   , m_n_tokens(initial_tokens)
   , m_run_number(run_number)
-  , m_livetime_counter(livetime_counter)
+  , m_livetime_counter(std::move(livetime_counter))
   , m_token_receiver(nullptr)
 {
   m_open_trigger_time = std::chrono::steady_clock::now();

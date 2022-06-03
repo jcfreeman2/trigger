@@ -290,7 +290,7 @@ public:
 
       const auto& last_seen = sit.second.last_seen;
       auto delta = now - last_seen;
-      auto delta_us = std::chrono::duration_cast<std::chrono::microseconds>(delta);
+      [[maybe_unused]] auto delta_us = std::chrono::duration_cast<std::chrono::microseconds>(delta);
       if (delta < latency) {
         // std::cerr << "still active " << ident
         //           << " [" << completeness

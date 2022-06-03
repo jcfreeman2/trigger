@@ -23,6 +23,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 
 using namespace dunedaq;
 

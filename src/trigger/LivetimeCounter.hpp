@@ -1,5 +1,13 @@
-#ifndef TRIGGER_PLUGINS_LIVETIMECOUNTER_HPP_
-#define TRIGGER_PLUGINS_LIVETIMECOUNTER_HPP_
+/**
+ * @file LivetimeCounter.hpp
+ *
+ * This is part of the DUNE DAQ Application Framework, copyright 2022.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+
+#ifndef TRIGGER_SRC_TRIGGER_LIVETIMECOUNTER_HPP_
+#define TRIGGER_SRC_TRIGGER_LIVETIMECOUNTER_HPP_
 #include <chrono>
 #include <map>
 #include <mutex>
@@ -27,7 +35,7 @@ public:
  /**
  ** @brief A type to store a time duration in milliseconds
  **/
-  using state_time_t = uint64_t;
+  using state_time_t = uint64_t; // NOLINT(build/unsigned)
 
 
  /**
@@ -35,7 +43,7 @@ public:
  **
  ** Counting the time in the initial state begins immediately
  **/
-  LivetimeCounter(State state);
+  explicit LivetimeCounter(State state);
 
   ~LivetimeCounter();
 
@@ -77,4 +85,4 @@ private:
 };
 } // namespace dunedaq::trigger
  
-#endif // TRIGGER_PLUGINS_LIVETIMECOUNTER_HPP_
+#endif // TRIGGER_SRC_TRIGGER_LIVETIMECOUNTER_HPP_

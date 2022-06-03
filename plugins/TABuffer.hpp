@@ -26,9 +26,9 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 class TABuffer : public dunedaq::appfwk::DAQModule
 {
 public:
@@ -47,12 +47,12 @@ private:
   struct TAWrapper
   {
     triggeralgs::TriggerActivity activity;
-    std::vector<uint8_t> activity_overlay_buffer;
+    std::vector<uint8_t> activity_overlay_buffer; // NOLINT(build/unsigned)
     
     // Don't really want this default ctor, but IterableQueueModel requires it
     TAWrapper() {}
     
-    TAWrapper(triggeralgs::TriggerActivity a)
+    TAWrapper(const triggeralgs::TriggerActivity& a) // NOLINT(runtime/explicit)
       : activity(a)
     {
       populate_buffer();
@@ -91,12 +91,12 @@ private:
 
     size_t get_frame_size() { return get_payload_size(); }
 
-    uint8_t* begin()
+    uint8_t* begin() // NOLINT(build/unsigned) 
     {
       return activity_overlay_buffer.data();
     }
     
-    uint8_t* end()
+    uint8_t* end() // NOLINT(build/unsigned) 
     {
       return activity_overlay_buffer.data()+activity_overlay_buffer.size();
     }
@@ -134,21 +134,19 @@ private:
   // Don't actually use this, but it's currently needed as arg to request handler ctor
   std::unique_ptr<readoutlibs::FrameErrorRegistry> m_error_registry;
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
-namespace dunedaq {
-namespace readoutlibs {
+namespace dunedaq::readoutlibs {
 
 template<>
-uint64_t
-get_frame_iterator_timestamp(uint8_t* it)
+uint64_t // NOLINT(build/unsigned) 
+get_frame_iterator_timestamp(uint8_t* it) // NOLINT(build/unsigned) 
 {
-  detdataformats::trigger::TriggerActivity* activity = reinterpret_cast<detdataformats::trigger::TriggerActivity*>(it);
+  auto activity = reinterpret_cast<detdataformats::trigger::TriggerActivity*>(it); // NOLINT
   return activity->data.time_start;
 }
 
-}
-}
+} // namespace dunedaq::readoutlibs
+
 
 #endif // TRIGGER_PLUGINS_TABUFFER_HPP_

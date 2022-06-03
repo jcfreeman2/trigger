@@ -25,8 +25,7 @@
 #include <string>
 #include <utility>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 class FakeTPCreatorHeartbeatMaker : public dunedaq::appfwk::DAQModule
 {
 public:
@@ -75,7 +74,6 @@ private:
   std::atomic<metric_counter_type> m_tpset_sent_count{ 0 };
   std::atomic<metric_counter_type> m_heartbeats_sent{ 0 };
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_PLUGINS_FAKETPCREATORHEARTBEATMAKER_HPP_

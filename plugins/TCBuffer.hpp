@@ -29,9 +29,9 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 class TCBuffer : public dunedaq::appfwk::DAQModule
 {
 public:
@@ -50,12 +50,12 @@ private:
   struct TCWrapper
   {
     triggeralgs::TriggerCandidate candidate;
-    std::vector<uint8_t> candidate_overlay_buffer;
+    std::vector<uint8_t> candidate_overlay_buffer;  // NOLINT(build/unsigned)
     // Don't really want this default ctor, but IterableQueueModel requires it
     TCWrapper() {}
     
-    TCWrapper(triggeralgs::TriggerCandidate c)
-      : candidate(c)
+    TCWrapper(triggeralgs::TriggerCandidate c) // NOLINT(runtime/explicit)
+      : candidate(std::move(c))
     {
       populate_buffer();
     }
@@ -88,12 +88,12 @@ private:
 
     size_t get_frame_size() { return get_payload_size(); }
 
-    uint8_t* begin()
+    uint8_t* begin() // NOLINT(build/unsigned)
     {
       return candidate_overlay_buffer.data();
     }
     
-    uint8_t* end()
+    uint8_t* end() // NOLINT(build/unsigned)
     {
       return candidate_overlay_buffer.data()+candidate_overlay_buffer.size();
     }
@@ -131,21 +131,18 @@ private:
   // Don't actually use this, but it's currently needed as arg to request handler ctor
   std::unique_ptr<readoutlibs::FrameErrorRegistry> m_error_registry;
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
-namespace dunedaq {
-namespace readoutlibs {
+namespace dunedaq::readoutlibs {
 
 template<>
-uint64_t
-get_frame_iterator_timestamp(uint8_t* it)
+uint64_t  // NOLINT(build/unsigned)
+get_frame_iterator_timestamp(uint8_t* it) // NOLINT(build/unsigned)
 {
-  detdataformats::trigger::TriggerActivity* activity = reinterpret_cast<detdataformats::trigger::TriggerActivity*>(it);
+  auto activity = reinterpret_cast<detdataformats::trigger::TriggerActivity*>(it); // NOLINT
   return activity->data.time_start;
 }
 
-}
-}
+} // namespace dunedaq::readoutlibs
 
 #endif // TRIGGER_PLUGINS_TCBUFFER_HPP_

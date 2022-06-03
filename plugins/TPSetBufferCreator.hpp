@@ -29,10 +29,10 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 /**
  * @brief TPSetBufferCreator creates a buffer that stores TPSets and handles data requests.
@@ -95,14 +95,13 @@ private:
   std::map<dfmessages::DataRequest, std::vector<trigger::TPSet>, DataRequestComp>
     m_dr_on_hold; ///< Holds data request when data has not arrived in the buffer yet
 
-  std::unique_ptr<daqdataformats::Fragment> convert_to_fragment(std::vector<TPSet>&,
-                                                                dfmessages::DataRequest);
+  std::unique_ptr<daqdataformats::Fragment> convert_to_fragment(const std::vector<TPSet>&,
+                                                                const dfmessages::DataRequest&);
 
-  void send_out_fragment(std::unique_ptr<daqdataformats::Fragment>, std::string, size_t&, std::atomic<bool>&);
-  void send_out_fragment(std::unique_ptr<daqdataformats::Fragment>, std::string);
+  void send_out_fragment(std::unique_ptr<daqdataformats::Fragment>, const std::string&, size_t&, std::atomic<bool>&);
+  void send_out_fragment(std::unique_ptr<daqdataformats::Fragment>, const std::string&);
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_PLUGINS_TPSETBUFFERCREATOR_HPP_
 

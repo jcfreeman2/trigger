@@ -27,8 +27,7 @@
 #include <string>
 #include <utility>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 class TimingTriggerCandidateMaker : public dunedaq::appfwk::DAQModule
 {
 public:
@@ -74,7 +73,6 @@ private:
   std::atomic<metric_counter_type> m_tc_sig_type_err_count{ 0 };
   std::atomic<metric_counter_type> m_tc_total_count{ 0 };
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_PLUGINS_TIMINGTRIGGERCANDIDATEMAKER_HPP_

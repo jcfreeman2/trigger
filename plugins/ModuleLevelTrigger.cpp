@@ -30,10 +30,10 @@
 #include <random>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 
 ModuleLevelTrigger::ModuleLevelTrigger(const std::string& name)
   : DAQModule(name)
@@ -68,7 +68,7 @@ ModuleLevelTrigger::get_info(opmonlib::InfoCollector& ci, int /*level*/)
   i.td_paused_count = m_td_paused_count.load();
   i.td_total_count = m_td_total_count.load();
 
-  if (m_livetime_counter.get() != nullptr) {
+  if (m_livetime_counter) {
     i.lc_kLive = m_livetime_counter->get_time(LivetimeCounter::State::kLive);
     i.lc_kPaused = m_livetime_counter->get_time(LivetimeCounter::State::kPaused);
     i.lc_kDead = m_livetime_counter->get_time(LivetimeCounter::State::kDead);
@@ -84,7 +84,7 @@ ModuleLevelTrigger::do_configure(const nlohmann::json& confobj)
 
   m_links.clear();
   for (auto const& link : params.links) {
-    m_links.push_back(
+    m_links.emplace_back(
       dfmessages::GeoID{ daqdataformats::GeoID::string_to_system_type(link.system), link.region, link.element });
   }
   m_trigger_decision_connection = params.dfo_connection;
@@ -166,7 +166,7 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
     if (tc.type == triggeralgs::TriggerCandidate::Type::kTiming) {
       decision.trigger_type = tc.detid & 0xff;
     } else {
-      m_trigger_type_shifted = ((int)tc.type << 8);
+      m_trigger_type_shifted = (static_cast<int>(tc.type) << 8);
       decision.trigger_type = m_trigger_type_shifted;
     }
   } else {
@@ -174,7 +174,7 @@ ModuleLevelTrigger::create_decision(const triggeralgs::TriggerCandidate& tc)
   }
 
   TLOG_DEBUG(3) << "HSI passthrough: " << m_hsi_passthrough << ", TC detid: " << tc.detid
-                << ", TC type: " << (int)tc.type << ", DECISION trigger type: " << decision.trigger_type;
+                << ", TC type: " << static_cast<int>(tc.type) << ", DECISION trigger type: " << decision.trigger_type;
 
   for (auto link : m_links) {
     dfmessages::ComponentRequest request;
@@ -276,8 +276,7 @@ ModuleLevelTrigger::dfo_busy_callback(dfmessages::TriggerInhibit& inhibit)
   }
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::ModuleLevelTrigger)
 

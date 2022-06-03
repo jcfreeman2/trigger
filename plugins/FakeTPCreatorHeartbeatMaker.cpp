@@ -13,9 +13,9 @@
 #include "rcif/cmd/Nljs.hpp"
 
 #include <string>
+#include <utility>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 FakeTPCreatorHeartbeatMaker::FakeTPCreatorHeartbeatMaker(const std::string& name)
   : DAQModule(name)
   , m_thread(std::bind(&FakeTPCreatorHeartbeatMaker::do_work, this, std::placeholders::_1))
@@ -63,7 +63,7 @@ FakeTPCreatorHeartbeatMaker::do_conf(const nlohmann::json& conf)
 void
 FakeTPCreatorHeartbeatMaker::do_start(const nlohmann::json& args)
 {
-  rcif::cmd::StartParams start_params = args.get<rcif::cmd::StartParams>();
+  auto start_params = args.get<rcif::cmd::StartParams>();
   m_run_number = start_params.run;
 
   m_thread.start_working_thread("heartbeater");
@@ -91,7 +91,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
 
   bool is_first_tpset_received = true;
 
-  daqdataformats::timestamp_t last_sent_heartbeat_time;
+  daqdataformats::timestamp_t last_sent_heartbeat_time = 0;
 
   TPSet::seqno_t sequence_number = 0;
   
@@ -130,7 +130,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
       ++sequence_number;
       while (!successfully_sent_heartbeat) {
         try {
-          m_output_queue->send(std::move(tpset_heartbeat), m_queue_timeout);
+          m_output_queue->send(TPSet(tpset_heartbeat), m_queue_timeout);
           successfully_sent_heartbeat = true;
           m_heartbeats_sent++;
           last_sent_heartbeat_time = current_tpset_start_time;
@@ -149,7 +149,7 @@ FakeTPCreatorHeartbeatMaker::do_work(std::atomic<bool>& running_flag)
 
     while (!successfully_sent_real_tpset) {
       try {
-        m_output_queue->send(std::move(tpset), m_queue_timeout);
+        m_output_queue->send(TPSet(tpset), m_queue_timeout);
         successfully_sent_real_tpset = true;
         m_tpset_sent_count++;
       } catch (const dunedaq::iomanager::TimeoutExpired& excpt) {
@@ -191,7 +191,6 @@ FakeTPCreatorHeartbeatMaker::get_heartbeat(TPSet& tpset_heartbeat,
   tpset_heartbeat.origin = m_geoid;
 }
 
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::trigger::FakeTPCreatorHeartbeatMaker)

@@ -25,8 +25,7 @@
 #include <string>
 #include <utility>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 class TPBuffer : public dunedaq::appfwk::DAQModule
 {
 public:
@@ -49,7 +48,7 @@ private:
     // Don't really want this default ctor, but IterableQueueModel requires it
     TPWrapper() {}
     
-    TPWrapper(triggeralgs::TriggerPrimitive p)
+    TPWrapper(triggeralgs::TriggerPrimitive p)  // NOLINT(runtime/explicit)
       : primitive(p)
     {}
     
@@ -123,20 +122,18 @@ private:
   // Don't actually use this, but it's currently needed as arg to request handler ctor
   std::unique_ptr<readoutlibs::FrameErrorRegistry> m_error_registry;
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
-namespace dunedaq {
-namespace readoutlibs {
+namespace dunedaq::readoutlibs {
 
 template<>
-uint64_t
+uint64_t // NOLINT(build/unsigned)
 get_frame_iterator_timestamp(triggeralgs::TriggerPrimitive* prim)
 {
   return prim->time_start;
 }
 
-}
-}
+} // namespace dunedaq::readoutlibs
+
 
 #endif // TRIGGER_PLUGINS_TPBUFFER_HPP_

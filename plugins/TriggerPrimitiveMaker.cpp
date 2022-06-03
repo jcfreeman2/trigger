@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 using namespace triggeralgs;
@@ -81,7 +82,7 @@ TriggerPrimitiveMaker::do_start(const nlohmann::json& args)
 {
   TLOG(TLVL_ENTER_EXIT_METHODS) << get_name() << ": Entering do_start() method";
 
-  rcif::cmd::StartParams start_params = args.get<rcif::cmd::StartParams>();
+  auto start_params = args.get<rcif::cmd::StartParams>();
   m_run_number = start_params.run;
 
   m_running_flag.store(true);
@@ -126,7 +127,7 @@ TriggerPrimitiveMaker::do_scrap(const nlohmann::json& /*args*/)
 }
 
 std::vector<TPSet>
-TriggerPrimitiveMaker::read_tpsets(std::string filename, int region, int element)
+TriggerPrimitiveMaker::read_tpsets(const std::string& filename, int region, int element)
 {
   std::ifstream file(filename);
   if (!file || file.bad()) {
@@ -283,7 +284,7 @@ TriggerPrimitiveMaker::do_work(std::atomic<bool>& running_flag,
 
   auto run_end_time = std::chrono::steady_clock::now();
   auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(run_end_time - run_start_time).count();
-  float rate_hz = 1e3 * static_cast<float>(generated_count) / time_ms;
+  auto rate_hz = 1e3 * static_cast<float>(generated_count) / time_ms;
 
   TLOG() << "Generated " << generated_count << " TP sets (" << generated_tp_count << " TPs) in " << time_ms << " ms. ("
          << rate_hz << " TPSets/s). " << push_failed_count << " failed to push";

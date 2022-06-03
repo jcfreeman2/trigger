@@ -22,8 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace dunedaq {
-namespace trigger {
+namespace dunedaq::trigger {
 class TriggerPrimitiveMaker : public dunedaq::appfwk::DAQModule
 {
 public:
@@ -56,7 +55,7 @@ private:
   std::vector<std::unique_ptr<std::thread>> m_threads;
   std::atomic<bool> m_running_flag;
 
-  std::vector<TPSet> read_tpsets(std::string filename, int region, int element);
+  std::vector<TPSet> read_tpsets(const std::string& filename, int region, int element);
 
   // Configuration
   triggerprimitivemaker::ConfParams m_conf;
@@ -79,7 +78,6 @@ private:
   triggeralgs::timestamp_t m_earliest_first_tpset_timestamp;
   triggeralgs::timestamp_t m_latest_last_tpset_timestamp;
 };
-} // namespace trigger
-} // namespace dunedaq
+} // namespace dunedaq::trigger
 
 #endif // TRIGGER_PLUGINS_TRIGGERPRIMITIVEMAKER_HPP_
